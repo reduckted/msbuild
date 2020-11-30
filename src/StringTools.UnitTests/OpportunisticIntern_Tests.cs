@@ -43,7 +43,8 @@ namespace Microsoft.StringTools.Tests
 
         private static void AssertInternable(string value)
         {
-            AssertInternable(value.ToCharArray(), 0, value.ToCharArray().Length);
+            string result = AssertInternable(value.ToCharArray(), 0, value.ToCharArray().Length);
+            result.ShouldBe(value);
         }
 
         private static void AssertNotInternable(InternableString internable)
