@@ -67,7 +67,7 @@ namespace Microsoft.StringTools
         /// <summary>
         /// An array of callbacks to be called for each string being interned.
         /// </summary>
-        private static volatile TryInternStringDelegate[] s_internStringCallbacks = new TryInternStringDelegate[0];
+        private static volatile TryInternStringDelegate[] s_internStringCallbacks = Array.Empty<TryInternStringDelegate>();
 
         /// <summary>
         /// A lock protecting writes to <see cref="s_internStringCallbacks"/>.
@@ -227,7 +227,7 @@ namespace Microsoft.StringTools
         /// </summary>
         internal static void ResetForTests()
         {
-            s_internStringCallbacks = new TryInternStringDelegate[0];
+            s_internStringCallbacks = Array.Empty<TryInternStringDelegate>();
         }
     }
 }

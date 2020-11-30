@@ -1,5 +1,4 @@
-﻿
-// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -2036,7 +2035,7 @@ namespace Microsoft.Build.Evaluation
             /// Expand the match provided into a string, and append that to the provided InternableString.
             /// Returns true if ExpanderOptions.BreakOnNotEmpty was passed, expression was going to be non-empty, and so it broke out early.
             /// </summary>
-            /// <typeparam name="S">Type of source items</typeparam>
+            /// <typeparam name="S">Type of source items.</typeparam>
             private static bool ExpandExpressionCaptureIntoStringBuilder<S>(
                 Expander<P, I> expander,
                 ExpressionShredder.ItemExpressionCapture capture,

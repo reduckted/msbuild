@@ -266,7 +266,7 @@ namespace Microsoft.StringTools
                             break;
                     }
 
-                    if (internResult != InternResult.MatchedHardcodedString && internResult != InternResult.RejectedFromInterning)
+                    if (internResult == InternResult.FoundInWeakStringCache || internResult == InternResult.AddedToWeakStringCache)
                     {
                         _missedHardcodedStrings.TryGetValue(result, out int priorCount);
                         _missedHardcodedStrings[result] = priorCount + 1;
