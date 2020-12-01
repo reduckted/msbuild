@@ -27,8 +27,6 @@
       <ExcludeFromStyleCop>true</ExcludeFromStyleCop>
     </Compile>
 
-    <Compile Remove="SpanBasedStringBuilder.Simple_Tests.cs" />
-
     <None Include="..\Shared\UnitTests\App.config">
       <Link>App.config</Link>
       <SubType>Designer</SubType>

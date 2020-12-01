@@ -1,10 +1,18 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#if NET35_UNITTEST
+extern alias StringToolsNet35;
+#endif
+
 using System.Collections.Generic;
 
 using Shouldly;
 using Xunit;
+
+#if NET35_UNITTEST
+using StringToolsNet35::Microsoft.StringTools;
+#endif
 
 namespace Microsoft.StringTools.Tests
 {
@@ -118,6 +126,7 @@ namespace Microsoft.StringTools.Tests
             new InternableString(stringBuilder).ExpensiveConvertToString().ShouldBe(datum.ToString());
         }
 
+#if !NET35_UNITTEST
         [Theory]
         [MemberData(nameof(TestDataForTrim))]
         public void TrimStartRemovesLeadingWhiteSpace(InterningTestData.TestDatum datum)
@@ -144,6 +153,7 @@ namespace Microsoft.StringTools.Tests
             stringBuilder.Trim();
             new InternableString(stringBuilder).ExpensiveConvertToString().ShouldBe(datum.ToString().Trim());
         }
+#endif
 
         [Theory]
         [MemberData(nameof(TestData))]
