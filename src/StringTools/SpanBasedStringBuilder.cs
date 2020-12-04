@@ -156,7 +156,7 @@ namespace Microsoft.StringTools
         /// <param name="value">The string to append.</param>
         public void Append(string value)
         {
-            AddSpan(value.AsMemory());
+            Append(value, 0, value.Length);
         }
 
         /// <summary>
@@ -167,7 +167,11 @@ namespace Microsoft.StringTools
         /// <param name="count">The length of the substring to append.</param>
         public void Append(string value, int startIndex, int count)
         {
-            AddSpan(value.AsMemory(startIndex, count));
+            if (count > 0)
+            {
+                _spans.Add(value.AsMemory(startIndex, count));
+                Length += count;
+            }
         }
 
         /// <summary>
@@ -239,15 +243,5 @@ namespace Microsoft.StringTools
         }
 
         #endregion
-
-        /// <summary>
-        /// Appends a ReadOnlyMemory&lt;char&gt; span to the string.
-        /// </summary>
-        /// <param name="span"></param>
-        private void AddSpan(ReadOnlyMemory<char> span)
-        {
-            _spans.Add(span);
-            Length += span.Length;
-        }
     }
 }
