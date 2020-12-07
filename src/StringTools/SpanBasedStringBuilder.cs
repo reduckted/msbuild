@@ -156,7 +156,11 @@ namespace Microsoft.StringTools
         /// <param name="value">The string to append.</param>
         public void Append(string value)
         {
-            Append(value, 0, value.Length);
+            if (value != null)
+            {
+                _spans.Add(value.AsMemory());
+                Length += value.Length;
+            }
         }
 
         /// <summary>
@@ -167,10 +171,20 @@ namespace Microsoft.StringTools
         /// <param name="count">The length of the substring to append.</param>
         public void Append(string value, int startIndex, int count)
         {
-            if (count > 0)
+            if (value != null)
             {
-                _spans.Add(value.AsMemory(startIndex, count));
-                Length += count;
+                if (count > 0)
+                {
+                    _spans.Add(value.AsMemory(startIndex, count));
+                    Length += count;
+                }
+            }
+            else
+            {
+                if (startIndex != 0 || count != 0)
+                {
+                    throw new ArgumentNullException(nameof(value));
+                }
             }
         }
 
