@@ -20,6 +20,7 @@
   <ItemGroup Condition="'$(TargetFramework)' != 'net35'">
     <PackageReference Include="Microsoft.Extensions.ObjectPool" />
     <PackageReference Include="System.Memory" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="jnm2.ReferenceAssemblies.net35" />
