@@ -95,24 +95,6 @@ namespace Microsoft.StringTools
         private int _scavengeThreshold = _initialCapacity;
 
         /// <summary>
-        /// Implements the simple yet very decently performing djb2 hash function (xor version).
-        /// </summary>
-        /// <param name="internable">The internable to compute the hash code for.</param>
-        /// <returns>The 32-bit hash code.</returns>
-        internal static int GetInternableHashCode(ref InternableString internable)
-        {
-            int hashCode = 5381;
-            foreach (char ch in internable)
-            {
-                unchecked
-                {
-                    hashCode = hashCode * 33 ^ ch;
-                }
-            }
-            return hashCode;
-        }
-
-        /// <summary>
         /// Frees all GC handles and clears the cache.
         /// </summary>
         private void DisposeImpl()

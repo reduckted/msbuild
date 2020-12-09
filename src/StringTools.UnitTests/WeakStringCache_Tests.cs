@@ -45,7 +45,7 @@ namespace Microsoft.StringTools.Tests
             string testString = new StringBuilder(strPart1).Append(strPart2).ToString();
             InternableString testStringTarget = new InternableString(testString);
 
-            int hashCode = WeakStringCache.GetInternableHashCode(ref testStringTarget);
+            int hashCode = testStringTarget.GetHashCode();
 
             string cachedString = _cache.GetOrCreateEntry(ref testStringTarget, out bool cacheHit);
             cacheHit.ShouldBeFalse();

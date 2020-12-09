@@ -198,5 +198,36 @@ namespace Microsoft.StringTools
         {
             return OpportunisticIntern.Instance.InternableToString(ref this);
         }
+
+        /// <summary>
+        /// Implements the simple yet very decently performing djb2 hash function (xor version).
+        /// </summary>
+        /// <returns>A stable hashcode of the string represented by this instance.</returns>
+        public override int GetHashCode()
+        {
+            int hashCode = 5381;
+
+            if (_firstString != null)
+               {
+                foreach (char ch in _firstString)
+                {
+                    unchecked
+                    {
+                        hashCode = hashCode * 33 ^ ch;
+                    }
+                }
+            }
+            else if (_builder != null)
+            {
+                for (int i = 0; i < _builder.Length; i++)
+                {
+                    unchecked
+                    {
+                        hashCode = hashCode * 33 ^ _builder[i];
+                    }
+                }
+            }
+            return hashCode;
+        }
     }
 }

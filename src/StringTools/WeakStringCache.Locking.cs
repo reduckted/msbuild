@@ -27,7 +27,7 @@ namespace Microsoft.StringTools
         /// <returns>A string matching the given internable.</returns>
         public string GetOrCreateEntry(ref InternableString internable, out bool cacheHit)
         {
-            int hashCode = GetInternableHashCode(ref internable);
+            int hashCode = internable.GetHashCode();
 
             StringWeakHandle handle;
             string result;

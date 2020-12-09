@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace Microsoft.StringTools
 {
@@ -243,7 +244,7 @@ namespace Microsoft.StringTools
                 {
                     return span.Span.StartsWith(other.AsSpan(otherStart, otherLength - otherStart));
                 }
-                if (span.Span.CompareTo(other.AsSpan(otherStart, span.Length), StringComparison.Ordinal) != 0)
+                if (span.Span.SequenceCompareTo(other.AsSpan(otherStart, span.Length)) != 0)
                 {
                     return false;
                 }
@@ -291,9 +292,12 @@ namespace Microsoft.StringTools
             fixed (char* resultPtr = result)
             {
                 char* destPtr = resultPtr;
-                if (_inlineSpan.Length > 0)
+                if (!_inlineSpan.IsEmpty)
                 {
-                    _inlineSpan.CopyTo(new Span<char>(destPtr, charsRemaining));
+                    fixed (char* sourcePtr = _inlineSpan)
+                    {
+                        Unsafe.CopyBlockUnaligned(destPtr, sourcePtr, 2 * (uint)charsRemaining);
+                    }
                     destPtr += _inlineSpan.Length;
                     charsRemaining -= _inlineSpan.Length;
                 }
@@ -302,9 +306,15 @@ namespace Microsoft.StringTools
                 {
                     foreach (ReadOnlyMemory<char> span in _spans)
                     {
-                        span.Span.CopyTo(new Span<char>(destPtr, charsRemaining));
-                        destPtr += span.Length;
-                        charsRemaining -= span.Length;
+                        if (!span.IsEmpty)
+                        {
+                            fixed (char* sourcePtr = span.Span)
+                            {
+                                Unsafe.CopyBlockUnaligned(destPtr, sourcePtr, 2 * (uint)charsRemaining);
+                            }
+                            destPtr += span.Length;
+                            charsRemaining -= span.Length;
+                        }
                     }
                 }
             }
@@ -335,9 +345,39 @@ namespace Microsoft.StringTools
         /// <remarks>
         /// May allocate depending on whether the string has already been interned.
         /// </remarks>
-        public override unsafe string ToString()
+        public override string ToString()
         {
             return OpportunisticIntern.Instance.InternableToString(ref this);
+        }
+
+        /// <summary>
+        /// Implements the simple yet very decently performing djb2 hash function (xor version).
+        /// </summary>
+        /// <returns>A stable hashcode of the string represented by this instance.</returns>
+        public override unsafe int GetHashCode()
+        {
+            int hashCode = 5381;
+            fixed (char* charPtr = _inlineSpan)
+            {
+                for (int i = 0; i < _inlineSpan.Length; i++)
+                {
+                    hashCode = unchecked(hashCode * 33 ^ charPtr[i]);
+                }
+            }
+            if (_spans != null)
+            {
+                foreach (ReadOnlyMemory<char> span in _spans)
+                {
+                    fixed (char* charPtr = span.Span)
+                    {
+                        for (int i = 0; i < span.Length; i++)
+                        {
+                            hashCode = unchecked(hashCode * 33 ^ charPtr[i]);
+                        }
+                    }
+                }
+            }
+            return hashCode;
         }
     }
 }
