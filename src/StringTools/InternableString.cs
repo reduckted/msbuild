@@ -287,7 +287,6 @@ namespace Microsoft.StringTools
             // the System.String, the technique is generally considered safe as we are the sole owners of the new object. It is important
             // to initialize the string with the '\0' characters as this hits an optimized code path in the runtime.
             string result = new string((char)0, Length);
-            int charsRemaining = Length;
 
             fixed (char* resultPtr = result)
             {
@@ -296,10 +295,9 @@ namespace Microsoft.StringTools
                 {
                     fixed (char* sourcePtr = _inlineSpan)
                     {
-                        Unsafe.CopyBlockUnaligned(destPtr, sourcePtr, 2 * (uint)charsRemaining);
+                        Unsafe.CopyBlockUnaligned(destPtr, sourcePtr, 2 * (uint)_inlineSpan.Length);
                     }
                     destPtr += _inlineSpan.Length;
-                    charsRemaining -= _inlineSpan.Length;
                 }
 
                 if (_spans != null)
@@ -310,10 +308,9 @@ namespace Microsoft.StringTools
                         {
                             fixed (char* sourcePtr = span.Span)
                             {
-                                Unsafe.CopyBlockUnaligned(destPtr, sourcePtr, 2 * (uint)charsRemaining);
+                                Unsafe.CopyBlockUnaligned(destPtr, sourcePtr, 2 * (uint)span.Length);
                             }
                             destPtr += span.Length;
-                            charsRemaining -= span.Length;
                         }
                     }
                 }
