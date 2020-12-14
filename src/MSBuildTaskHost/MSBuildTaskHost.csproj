@@ -129,9 +129,6 @@
     <Compile Include="..\Shared\NodeShutdown.cs">
       <Link>NodeShutdown.cs</Link>
     </Compile>
-    <Compile Include="..\Shared\StringToolsHost.cs">
-      <Link>StringToolsHost.cs</Link>
-    </Compile>
     <Compile Include="..\Shared\ReadOnlyEmptyCollection.cs">
       <Link>ReadOnlyEmptyCollection.cs</Link>
     </Compile>

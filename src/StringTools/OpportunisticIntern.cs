@@ -94,10 +94,8 @@ namespace Microsoft.StringTools
             /// </summary>
             private enum InternResult
             {
-                MatchedHardcodedString,
                 FoundInWeakStringCache,
                 AddedToWeakStringCache,
-                RejectedFromInterning
             }
 
             /// <summary>
@@ -112,11 +110,6 @@ namespace Microsoft.StringTools
             private readonly bool _gatherStatistics;
 
             /// <summary>
-            /// Number of times interning with hardcoded string literals worked.
-            /// </summary>
-            private int _hardcodedInternHits;
-
-            /// <summary>
             /// Number of times the regular interning path found the string in the cache.
             /// </summary>
             private int _regularInternHits;
@@ -125,11 +118,6 @@ namespace Microsoft.StringTools
             /// Number of times the regular interning path added the string to the cache.
             /// </summary>
             private int _regularInternMisses;
-
-            /// <summary>
-            /// Number of times interning wasn't attempted.
-            /// </summary>
-            private int _rejectedStrings;
 
             /// <summary>
             /// Total number of strings eliminated by interning.
@@ -142,10 +130,10 @@ namespace Microsoft.StringTools
             private int _internEliminatedChars;
 
             /// <summary>
-            /// Maps strings that went though the regular (i.e. not hardcoded) interning path to the number of times they have been
-            /// seen. The higher the number the better the payoff if the string had been hardcoded.
+            /// Maps strings that went though the interning path to the number of times they have been
+            /// seen. The higher the number the better the payoff of interning.
             /// </summary>
-            private Dictionary<string, int> _missedHardcodedStrings;
+            private Dictionary<string, int> _internCallCountsByString;
 
 #endregion
 
@@ -153,7 +141,7 @@ namespace Microsoft.StringTools
             {
                 if (gatherStatistics)
                 {
-                    _missedHardcodedStrings = new Dictionary<string, int>();
+                    _internCallCountsByString = new Dictionary<string, int>();
                 }
                 _gatherStatistics = gatherStatistics;
             }
@@ -186,8 +174,6 @@ namespace Microsoft.StringTools
                 if (_gatherStatistics)
                 {
                     result.AppendLine(string.Format("\n{0}{1}{0}", new string('=', 41 - (title.Length / 2)), title));
-                    result.AppendLine(string.Format("||{0,50}|{1,20:N0}|{2,8}|", "Hardcoded Hits", _hardcodedInternHits, "hits"));
-                    result.AppendLine(string.Format("||{0,50}|{1,20:N0}|{2,8}|", "Hardcoded Rejects", _rejectedStrings, "rejects"));
                     result.AppendLine(string.Format("||{0,50}|{1,20:N0}|{2,8}|", "WeakStringCache Hits", _regularInternHits, "hits"));
                     result.AppendLine(string.Format("||{0,50}|{1,20:N0}|{2,8}|", "WeakStringCache Misses", _regularInternMisses, "misses"));
                     result.AppendLine(string.Format("||{0,50}|{1,20:N0}|{2,8}|", "Eliminated Strings*", _internEliminatedStrings, "strings"));
@@ -197,7 +183,7 @@ namespace Microsoft.StringTools
                     result.AppendLine("|---------------------------------------------------------------------------------|");
 
                     IEnumerable<string> topMissingHardcodedString =
-                        _missedHardcodedStrings
+                        _internCallCountsByString
                         .OrderByDescending(kv => kv.Value * kv.Key.Length)
                         .Take(15)
                         .Where(kv => kv.Value > 1)
@@ -225,18 +211,6 @@ namespace Microsoft.StringTools
             /// </summary>
             private InternResult TryIntern(ref InternableString candidate, out string interned)
             {
-                // First, try the interning callbacks.
-                if (Strings.CallStringInterningCallbacks(ref candidate, out interned))
-                {
-                    // Either matched a hardcoded string or is explicitly not to be interned.
-                    if (interned != null)
-                    {
-                        return InternResult.MatchedHardcodedString;
-                    }
-                    interned = candidate.ExpensiveConvertToString();
-                    return InternResult.RejectedFromInterning;
-                }
-
                 interned = _weakStringCache.GetOrCreateEntry(ref candidate, out bool cacheHit);
                 return cacheHit ? InternResult.FoundInWeakStringCache : InternResult.AddedToWeakStringCache;
             }
@@ -246,31 +220,22 @@ namespace Microsoft.StringTools
             /// </summary>
             private string InternWithStatistics(ref InternableString candidate)
             {
-                lock (_missedHardcodedStrings)
+                lock (_internCallCountsByString)
                 {
                     InternResult internResult = TryIntern(ref candidate, out string result);
 
                     switch (internResult)
                     {
-                        case InternResult.MatchedHardcodedString:
-                            _hardcodedInternHits++;
-                            break;
                         case InternResult.FoundInWeakStringCache:
                             _regularInternHits++;
                             break;
                         case InternResult.AddedToWeakStringCache:
                             _regularInternMisses++;
                             break;
-                        case InternResult.RejectedFromInterning:
-                            _rejectedStrings++;
-                            break;
                     }
 
-                    if (internResult == InternResult.FoundInWeakStringCache || internResult == InternResult.AddedToWeakStringCache)
-                    {
-                        _missedHardcodedStrings.TryGetValue(result, out int priorCount);
-                        _missedHardcodedStrings[result] = priorCount + 1;
-                    }
+                    _internCallCountsByString.TryGetValue(result, out int priorCount);
+                    _internCallCountsByString[result] = priorCount + 1;
 
                     if (!candidate.ReferenceEquals(result))
                     {
