@@ -17,12 +17,12 @@ using System;
 
 namespace Microsoft.StringTools.Tests
 {
-    public class OpportunisticInternTestBase
+    public class WeakStringCacheInterner_Tests
     {
         private static bool IsInternable(ref InternableString internable)
         {
-            string i1 = OpportunisticIntern.Instance.InternableToString(ref internable);
-            string i2 = OpportunisticIntern.Instance.InternableToString(ref internable);
+            string i1 = WeakStringCacheInterner.Instance.InternableToString(ref internable);
+            string i2 = WeakStringCacheInterner.Instance.InternableToString(ref internable);
             i1.ShouldBe(i2); // No matter what, the same string value should return.
             return System.Object.ReferenceEquals(i1, i2);
         }

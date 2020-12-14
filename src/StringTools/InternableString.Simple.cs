@@ -196,7 +196,7 @@ namespace Microsoft.StringTools
         /// </remarks>
         public override unsafe string ToString()
         {
-            return OpportunisticIntern.Instance.InternableToString(ref this);
+            return WeakStringCacheInterner.Instance.InternableToString(ref this);
         }
 
         /// <summary>

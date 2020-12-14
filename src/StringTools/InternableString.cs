@@ -344,7 +344,7 @@ namespace Microsoft.StringTools
         /// </remarks>
         public override string ToString()
         {
-            return OpportunisticIntern.Instance.InternableToString(ref this);
+            return WeakStringCacheInterner.Instance.InternableToString(ref this);
         }
 
         /// <summary>

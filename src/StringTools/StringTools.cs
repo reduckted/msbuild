@@ -62,7 +62,7 @@ namespace Microsoft.StringTools
         public static string TryIntern(string str)
         {
             InternableString internableString = new InternableString(str);
-            return OpportunisticIntern.Instance.InternableToString(ref internableString);
+            return WeakStringCacheInterner.Instance.InternableToString(ref internableString);
         }
 
 #if !NET35
@@ -74,7 +74,7 @@ namespace Microsoft.StringTools
         public static string TryIntern(ReadOnlySpan<char> str)
         {
             InternableString internableString = new InternableString(str);
-            return OpportunisticIntern.Instance.InternableToString(ref internableString);
+            return WeakStringCacheInterner.Instance.InternableToString(ref internableString);
         }
 #endif
 
@@ -99,7 +99,7 @@ namespace Microsoft.StringTools
         /// </summary>
         public static void EnableDiagnostics()
         {
-            OpportunisticIntern.Instance.EnableStatisticsGathering();
+            WeakStringCacheInterner.Instance.EnableStatistics();
         }
 
         /// <summary>
@@ -107,7 +107,7 @@ namespace Microsoft.StringTools
         /// </summary>
         public static string CreateDiagnosticReport()
         {
-            return OpportunisticIntern.Instance.FormatStatistics();
+            return WeakStringCacheInterner.Instance.FormatStatistics();
         }
 
         #endregion
