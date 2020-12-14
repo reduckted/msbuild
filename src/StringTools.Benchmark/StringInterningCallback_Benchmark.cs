@@ -1,16 +1,29 @@
 using BenchmarkDotNet.Attributes;
+using System.Collections.Generic;
+using System;
+using System.IO;
+using System.Linq;
+using System.Net;
 
 namespace Microsoft.StringTools.Benchmark
 {
     [MemoryDiagnoser]
     public class StringInterningCallback_Benchmark
     {
+        private List<string> _stringsFromLogFile;
+
         [Params(
             "C#", "TRUE", "ResolveAssemblyReference",
             "12", "1234", "123456789012345678901234",
             "12345"
         )]
         public string StringToIntern { get; set; }
+
+        [Params(
+            @"C:\temp\MSBuild_strings_MSBuild.txt",
+            @"C:\temp\MSBuild_strings_OrchardCore.txt"
+        )]
+        public string LogFilePath { get; set; }
 
         private static bool TryInternHardcodedString(ref InternableString candidate, string str, ref string interned)
         {
@@ -107,28 +120,83 @@ namespace Microsoft.StringTools.Benchmark
             return false;
         }
 
-        [GlobalSetup(Target = nameof(CallbackWithHardcodedStrings))]
+        [GlobalSetup(Targets = new string[] { nameof(CallbackWithHardcodedStrings_Micro), nameof(CallbackWithHardcodedStrings_Replay) })]
         public void CallbackWithHardcodedStrings_Setup()
         {
             Strings.RegisterStringInterningCallback(TryMatchHardcodedStrings);
         }
 
-        [GlobalCleanup(Target = nameof(CallbackWithHardcodedStrings))]
+        [GlobalCleanup(Targets = new string[] { nameof(CallbackWithHardcodedStrings_Micro), nameof(CallbackWithHardcodedStrings_Replay) })]
         public void CallbackWithHardcodedStrings_Cleanup()
         {
             Strings.UnregisterStringInterningCallback(TryMatchHardcodedStrings);
         }
 
         [Benchmark]
-        public void CallbackWithHardcodedStrings()
+        public void CallbackWithHardcodedStrings_Micro()
         {
             Strings.TryIntern(StringToIntern);
         }
 
         [Benchmark]
-        public void NoCallback()
+        public void NoCallback_Micro()
         {
             Strings.TryIntern(StringToIntern);
+        }
+
+        [Benchmark]
+        public void CallbackWithHardcodedStrings_Replay()
+        {
+            ReplayStringInterning();
+        }
+
+        [Benchmark]
+        public void MacroNoCallback_Replay ()
+        {
+            ReplayStringInterning();
+        }
+
+        private void ReplayStringInterning()
+        {
+            if (_stringsFromLogFile == null)
+            {
+                // First-time setup.
+                _stringsFromLogFile = new List<string>();
+                using (StreamReader reader = new StreamReader(LogFilePath))
+                {
+                    while (reader.Peek() >= 0)
+                    {
+                        string encodedString = reader.ReadLine();
+                        string s = WebUtility.UrlDecode(encodedString);
+                        _stringsFromLogFile.Add(s);
+                    }
+                }
+
+                Dictionary<string, int> stringsByOccurrence = new Dictionary<string, int>();
+                foreach (string s in _stringsFromLogFile)
+                {
+                    if (!stringsByOccurrence.TryGetValue(s, out int occurrences))
+                    {
+                        occurrences = 0;
+                    }
+                    stringsByOccurrence[s] = occurrences + 1;
+                }
+                int counter = 0;
+                foreach (var item in stringsByOccurrence.OrderByDescending(item => item.Value))
+                {
+                    counter++;
+                    Console.WriteLine("### {0}. [{1}] \"{2}\"", counter, item.Value, item.Key);
+                    if (counter > 10)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            foreach (string s in _stringsFromLogFile)
+            {
+                Strings.TryIntern(s);
+            }
         }
     }
 }
