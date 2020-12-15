@@ -11,7 +11,7 @@ namespace Microsoft.StringTools
     /// Represents a string that can be converted to System.String with interning, i.e. by returning an existing string if it has been seen before
     /// and is still tracked in the intern table.
     /// </summary>
-    public ref struct InternableString
+    internal ref struct InternableString
     {
         /// <summary>
         /// Enumerator for the top-level struct. Enumerates characters of the string.

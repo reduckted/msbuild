@@ -34,7 +34,7 @@ namespace Microsoft.StringTools
     /// <remarks>
     /// This is a simple and inefficient implementation compatible with .NET Framework 3.5.
     /// </remarks>
-    public ref struct InternableString
+    internal ref struct InternableString
     {
         /// <summary>
         /// Enumerator for the top-level struct. Enumerates characters of the string.
