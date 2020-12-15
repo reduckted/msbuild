@@ -50,7 +50,7 @@ namespace Microsoft.StringTools.Benchmark
             {
                 sb.Append(subString);
             }
-            Strings.TryIntern(sb.ToString());
+            Strings.Intern(sb.ToString());
         }
 
         [Benchmark]
@@ -76,7 +76,7 @@ namespace Microsoft.StringTools.Benchmark
                 sb.Append(subString);
             }
             sb.Append(_uniqueStringCounter++.ToString("X8"));
-            Strings.TryIntern(sb.ToString());
+            Strings.Intern(sb.ToString());
         }
     }
 }

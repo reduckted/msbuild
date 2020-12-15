@@ -59,7 +59,7 @@ namespace Microsoft.StringTools
         /// </summary>
         /// <param name="str">The string to intern.</param>
         /// <returns>A string equal to <paramref name="str"/>, could be the same object as <paramref name="str"/>.</returns>
-        public static string TryIntern(string str)
+        public static string Intern(string str)
         {
             InternableString internableString = new InternableString(str);
             return WeakStringCacheInterner.Instance.InternableToString(ref internableString);
@@ -71,7 +71,7 @@ namespace Microsoft.StringTools
         /// </summary>
         /// <param name="str">The character span to intern.</param>
         /// <returns>A string equal to <paramref name="str"/>, could be the result of calling ToString() on <paramref name="str"/>.</returns>
-        public static string TryIntern(ReadOnlySpan<char> str)
+        public static string Intern(ReadOnlySpan<char> str)
         {
             InternableString internableString = new InternableString(str);
             return WeakStringCacheInterner.Instance.InternableToString(ref internableString);

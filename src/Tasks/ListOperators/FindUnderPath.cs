@@ -56,7 +56,7 @@ namespace Microsoft.Build.Tasks
             try
             {
                 conePath =
-                    Strings.TryIntern(
+                    Strings.Intern(
                         System.IO.Path.GetFullPath(FileUtilities.FixFilePath(Path.ItemSpec)));
                 conePath = FileUtilities.EnsureTrailingSlash(conePath);
             }
@@ -77,7 +77,7 @@ namespace Microsoft.Build.Tasks
                 try
                 {
                     fullPath =
-                        Strings.TryIntern(
+                        Strings.Intern(
                             System.IO.Path.GetFullPath(FileUtilities.FixFilePath(item.ItemSpec)));
                 }
                 catch (Exception e) when (ExceptionHandling.IsIoRelatedException(e))

@@ -11,10 +11,6 @@ namespace Microsoft.StringTools
     /// Represents a string that can be converted to System.String with interning, i.e. by returning an existing string if it has been seen before
     /// and is still tracked in the intern table.
     /// </summary>
-    /// <remarks>
-    /// The structure is public because it's exposed via the <see cref="TryInternStringDelegate"/> callback. It's a mutable struct and should
-    /// generally not be used directly from outside of the library.
-    /// </remarks>
     public ref struct InternableString
     {
         /// <summary>

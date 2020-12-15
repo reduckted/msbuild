@@ -130,7 +130,7 @@ namespace Microsoft.Build
                     if (currPos == 0 && n == stringLength)
                     {
                         charsRead = _decoder.GetChars(rawBuffer, rawPosition, n, charBuffer, 0);
-                        return Strings.TryIntern(charBuffer.AsSpan(0, charsRead));
+                        return Strings.Intern(charBuffer.AsSpan(0, charsRead));
                     }
 
                     resultBuffer ??= new char[stringLength]; // Actual string length in chars may be smaller.
@@ -140,7 +140,7 @@ namespace Microsoft.Build
                 }
                 while (currPos < stringLength);
 
-                return Strings.TryIntern(resultBuffer.AsSpan(0, charsRead));
+                return Strings.Intern(resultBuffer.AsSpan(0, charsRead));
             }
             catch (Exception e)
             {

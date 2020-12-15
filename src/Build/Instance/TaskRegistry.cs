@@ -310,7 +310,7 @@ namespace Microsoft.Build.Execution
 
                 if (assemblyFile != null && !Path.IsPathRooted(assemblyFile))
                 {
-                    assemblyFile = Strings.TryIntern(Path.Combine(directoryOfImportingFile, assemblyFile));
+                    assemblyFile = Strings.Intern(Path.Combine(directoryOfImportingFile, assemblyFile));
                 }
 
                 if (String.Equals(taskFactory, RegisteredTaskRecord.CodeTaskFactory, StringComparison.OrdinalIgnoreCase) || String.Equals(taskFactory, RegisteredTaskRecord.XamlTaskFactory, StringComparison.OrdinalIgnoreCase))

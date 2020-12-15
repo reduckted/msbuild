@@ -148,7 +148,7 @@ namespace Microsoft.Build.Evaluation
                 }
                 if (startIndex < endIndex)
                 {
-                    return Strings.TryIntern(_expression.AsSpan(startIndex, endIndex - startIndex));
+                    return Strings.Intern(_expression.AsSpan(startIndex, endIndex - startIndex));
                 }
                 return null;
             }
