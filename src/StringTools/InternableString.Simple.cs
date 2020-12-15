@@ -60,7 +60,7 @@ namespace Microsoft.StringTools
             /// <summary>
             /// Returns the current character.
             /// </summary>
-            public char Current => _string[_charIndex];
+            public char Current => (_string._builder == null ? _string.FirstString[_charIndex] : _string._builder[_charIndex]);
 
             /// <summary>
             /// Moves to the next character.
@@ -129,13 +129,6 @@ namespace Microsoft.StringTools
         {
             return new Enumerator(ref this);
         }
-
-        /// <summary>
-        /// Returns the character at the given index.
-        /// </summary>
-        /// <param name="index">The index to return the character at.</param>
-        /// <returns>The character.</returns>
-        private char this[int index] => (_builder == null ? FirstString[index] : _builder[index]);
 
         /// <summary>
         /// Returns true if the string is equal to another string by ordinal comparison.
