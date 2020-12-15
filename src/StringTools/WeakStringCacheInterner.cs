@@ -151,14 +151,14 @@ namespace Microsoft.StringTools
                 result.AppendLine("Elimination assumes that strings provided were unique objects.");
                 result.AppendLine("|---------------------------------------------------------------------------------|");
 
-                IEnumerable<string> topMissingHardcodedString =
+                IEnumerable<string> topInternedStrings =
                     _internCallCountsByString
                     .OrderByDescending(kv => kv.Value * kv.Key.Length)
-                    .Take(15)
                     .Where(kv => kv.Value > 1)
+                    .Take(15)
                     .Select(kv => string.Format(CultureInfo.InvariantCulture, "({1} instances x each {2} chars)\n{0}", kv.Key, kv.Value, kv.Key.Length));
 
-                result.AppendLine(string.Format("##########Top Missing Hardcoded Strings:  \n{0} ", string.Join("\n==============\n", topMissingHardcodedString.ToArray())));
+                result.AppendLine(string.Format("##########Top Top Interned Strings:  \n{0} ", string.Join("\n==============\n", topInternedStrings.ToArray())));
                 result.AppendLine();
 
                 WeakStringCache.DebugInfo debugInfo = _weakStringCache.GetDebugInfo();
