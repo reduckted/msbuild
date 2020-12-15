@@ -174,80 +174,35 @@ namespace Microsoft.StringTools
         }
 
         /// <summary>
-        /// Returns the character at the given index.
-        /// </summary>
-        /// <param name="index">The index to return the character at.</param>
-        /// <returns>The character.</returns>
-        /// <remarks>
-        /// Similar to StringBuilder, this indexer does not work in constant time and may take O(N) where N is the index
-        /// in the worst case. Use <see cref="GetEnumerator"/> for scanning the string in a linear fashion.
-        /// </remarks>
-        public char this[int index]
-        {
-            get
-            {
-                if (index < 0 || index >= Length)
-                {
-                    throw new ArgumentOutOfRangeException(nameof(index));
-                }
-
-                if (index < _inlineSpan.Length)
-                {
-                    return _inlineSpan[index];
-                }
-                index -= _inlineSpan.Length;
-
-                foreach (ReadOnlyMemory<char> span in _spans)
-                {
-                    if (index < span.Length)
-                    {
-                        return span.Span[index];
-                    }
-                    index -= span.Length;
-                }
-
-                throw new InvalidOperationException();
-            }
-        }
-
-        /// <summary>
-        /// Returns true if the string starts with another string.
+        /// Returns true if the string is equal to another string by ordinal comparison.
         /// </summary>
         /// <param name="other">Another string.</param>
-        /// <returns>True if this string starts with <paramref name="other"/>.</returns>
-        public bool StartsWithStringByOrdinalComparison(string other)
+        /// <returns>True if this string is equal to <paramref name="other"/>.</returns>
+        public bool Equals(string other)
         {
-            int otherLength = other.Length;
-            if (otherLength > Length)
-            {
-                // Can't start with a string which is longer.
-                return false;
-            }
-
-            if (otherLength <= _inlineSpan.Length)
-            {
-                return _inlineSpan.StartsWith(other.AsSpan());
-            }
-            if (_inlineSpan.CompareTo(other.AsSpan(0, _inlineSpan.Length), StringComparison.Ordinal) != 0)
+            if (other.Length != Length)
             {
                 return false;
             }
 
-            int otherStart = _inlineSpan.Length;
-            foreach (ReadOnlyMemory<char> span in _spans)
+            if (_inlineSpan.SequenceCompareTo(other.AsSpan(0, _inlineSpan.Length)) != 0)
             {
-                if (otherLength - otherStart <= span.Length)
-                {
-                    return span.Span.StartsWith(other.AsSpan(otherStart, otherLength - otherStart));
-                }
-                if (span.Span.SequenceCompareTo(other.AsSpan(otherStart, span.Length)) != 0)
-                {
-                    return false;
-                }
-                otherStart += span.Length;
+                return false;
             }
 
-            throw new InvalidOperationException();
+            if (_spans != null)
+            {
+                int otherStart = _inlineSpan.Length;
+                foreach (ReadOnlyMemory<char> span in _spans)
+                {
+                    if (span.Span.SequenceCompareTo(other.AsSpan(otherStart, span.Length)) != 0)
+                    {
+                        return false;
+                    }
+                    otherStart += span.Length;
+                }
+            }
+            return true;
         }
 
         /// <summary>

@@ -49,8 +49,7 @@ namespace Microsoft.StringTools
             {
                 if (WeakHandle.IsAllocated && WeakHandle.Target is string str)
                 {
-                    if (internable.Length == str.Length &&
-                        internable.StartsWithStringByOrdinalComparison(str))
+                    if (internable.Equals(str))
                     {
                         return str;
                     }

@@ -67,37 +67,23 @@ namespace Microsoft.StringTools.Tests
 
         [Theory]
         [MemberData(nameof(TestData))]
-        public void IndexerReturnsCharacters(InterningTestData.TestDatum datum)
+        public void EqualsReturnsExpectedValue(InterningTestData.TestDatum datum)
         {
             InternableString internableString = new InternableString(MakeSpanBasedStringBuilder(datum));
-            int length = datum.Length;
-            for (int index = 0; index < length; index++)
-            {
-                internableString[index].ShouldBe(datum[index]);
-            }
-        }
-
-        [Theory]
-        [MemberData(nameof(TestData))]
-        public void StartsWithStringByOrdinalComparisonReturnsExpectedValue(InterningTestData.TestDatum datum)
-        {
-            InternableString internableString = new InternableString(MakeSpanBasedStringBuilder(datum));
-            internableString.StartsWithStringByOrdinalComparison(string.Empty).ShouldBeTrue();
+            internableString.Equals(string.Empty).ShouldBe(internableString.Length == 0);
 
             string substr = datum.Fragments[0] ?? string.Empty;
-            internableString.StartsWithStringByOrdinalComparison(substr).ShouldBeTrue();
-            internableString.StartsWithStringByOrdinalComparison(substr.Substring(0, substr.Length / 2)).ShouldBeTrue();
+            internableString.Equals(substr).ShouldBe(substr.Length == internableString.Length);
 
             if (datum.Fragments.Length > 1)
             {
                 substr += datum.Fragments[1];
-                internableString.StartsWithStringByOrdinalComparison(substr).ShouldBeTrue();
-                internableString.StartsWithStringByOrdinalComparison(substr.Substring(0, substr.Length - datum.Fragments[1].Length / 2)).ShouldBeTrue();
+                internableString.Equals(substr).ShouldBe(substr.Length == internableString.Length);
 
-                internableString.StartsWithStringByOrdinalComparison(datum.ToString()).ShouldBeTrue();
+                internableString.Equals(datum.ToString()).ShouldBeTrue();
             }
 
-            internableString.StartsWithStringByOrdinalComparison("Things").ShouldBeFalse();
+            internableString.Equals("Things").ShouldBeFalse();
         }
 
         [Fact]

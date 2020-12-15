@@ -135,29 +135,34 @@ namespace Microsoft.StringTools
         /// </summary>
         /// <param name="index">The index to return the character at.</param>
         /// <returns>The character.</returns>
-        public char this[int index] => (_builder == null ? FirstString[index] : _builder[index]);
+        private char this[int index] => (_builder == null ? FirstString[index] : _builder[index]);
 
         /// <summary>
-        /// Returns true if the string starts with another string.
+        /// Returns true if the string is equal to another string by ordinal comparison.
         /// </summary>
         /// <param name="other">Another string.</param>
-        /// <returns>True if this string starts with <paramref name="other"/>.</returns>
-        public bool StartsWithStringByOrdinalComparison(string other)
+        /// <returns>True if this string is equal to <paramref name="other"/>.</returns>
+        public bool Equals(string other)
         {
-            if (_firstString != null)
-            {
-                return _firstString.StartsWith(other);
-            }
-
-            if (Length < other.Length)
+            if (other.Length != Length)
             {
                 return false;
             }
-            for (int i = 0; i < other.Length; i++)
+
+            if (_firstString != null)
             {
-                if (other[i] != this[i])
+                return _firstString.Equals(other);
+            }
+            if (_builder != null)
+            {
+                for (int i = 0; i < other.Length; i++)
                 {
-                    return false;
+                    // Note: This indexing into the StringBuilder could be O(N). We prefer it over allocating
+                    // a new string with ToString().
+                    if (other[i] != _builder[i])
+                    {
+                        return false;
+                    }
                 }
             }
             return true;
@@ -208,7 +213,7 @@ namespace Microsoft.StringTools
             int hashCode = 5381;
 
             if (_firstString != null)
-               {
+            {
                 foreach (char ch in _firstString)
                 {
                     unchecked
