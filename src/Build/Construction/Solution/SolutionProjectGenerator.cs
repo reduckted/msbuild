@@ -1100,7 +1100,7 @@ namespace Microsoft.Build.Construction
         private static string GetPropertiesAttributeForDirectMSBuildTask(ProjectConfigurationInSolution projectConfiguration)
         {
             string directProjectProperties = Strings.Intern(String.Join(";", GetConfigurationAndPlatformPropertiesString(projectConfiguration), SolutionProperties));
-            return directProjectProperties.ToString();
+            return directProjectProperties;
         }
 
         /// <summary>

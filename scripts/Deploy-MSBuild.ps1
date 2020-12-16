@@ -92,6 +92,7 @@ if ($runtime -eq "Desktop") {
 
         FileToCopy "artifacts\bin\MSBuildTaskHost\$configuration\net35\MSBuildTaskHost.exe"
         FileToCopy "artifacts\bin\MSBuildTaskHost\$configuration\net35\MSBuildTaskHost.pdb"
+        FileToCopy "$bootstrapBinDirectory\StringTools.net35.dll"
 
         FileToCopy "$bootstrapBinDirectory\Microsoft.Data.Entity.targets"
         FileToCopy "$bootstrapBinDirectory\Microsoft.ServiceModel.targets"
