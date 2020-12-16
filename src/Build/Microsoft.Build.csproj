@@ -36,7 +36,6 @@
     <PackageReference Include="System.Threading.Tasks.Dataflow" />
     <PackageReference Include="System.Memory" />
     <PackageReference Include="System.Text.Json" />
-    <PackageReference Include="Microsoft.Extensions.ObjectPool" />
 
     <PackageReference Include="System.Reflection.Metadata" Condition="'$(MonoBuild)' == 'true'" />
   </ItemGroup>

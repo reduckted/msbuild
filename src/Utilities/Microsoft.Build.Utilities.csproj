@@ -21,7 +21,6 @@
     <ProjectReference Include="..\Framework\Microsoft.Build.Framework.csproj" />
     <ProjectReference Include="..\StringTools\StringTools.csproj" />
 
-    <PackageReference Include="Microsoft.Extensions.ObjectPool" />
     <PackageReference Include="System.Collections.Immutable" />
     <PackageReference Include="System.Memory" />
   </ItemGroup>
@@ -29,7 +28,6 @@
   <ItemGroup Condition="'$(TargetFrameworkIdentifier)' != '.NETStandard'">
     <PackageReference Include="Microsoft.VisualStudio.Setup.Configuration.Interop" />
 
-    <PackageReference Include="Microsoft.Extensions.ObjectPool" />
     <Reference Include="System.Configuration" />
   </ItemGroup>
 

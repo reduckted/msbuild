@@ -3,54 +3,24 @@
 
 using System;
 
-#if !NET35
-using Microsoft.Extensions.ObjectPool;
-#endif
-
 namespace Microsoft.StringTools
 {
     public static class Strings
 
     {
-#if !NET35
-        /// <summary>
-        /// IPooledObjectPolicy used by <cref see="s_stringBuilderPool"/>.
-        /// </summary>
-        private class PooledObjectPolicy : IPooledObjectPolicy<SpanBasedStringBuilder>
-        {
-            /// <summary>
-            /// No need to retain excessively long builders forever.
-            /// </summary>
-            private const int MAX_RETAINED_BUILDER_CAPACITY = 1000;
-
-            /// <summary>
-            /// Creates a new SpanBasedStringBuilder with the default capacity.
-            /// </summary>
-            public SpanBasedStringBuilder Create()
-            {
-                return new SpanBasedStringBuilder();
-            }
-
-            /// <summary>
-            /// Returns a builder to the pool unless it's excessively long.
-            /// </summary>
-            public bool Return(SpanBasedStringBuilder stringBuilder)
-            {
-                if (stringBuilder.Capacity <= MAX_RETAINED_BUILDER_CAPACITY)
-                {
-                    stringBuilder.Clear();
-                    return true;
-                }
-                return false;
-            }
-        }
+        #region Fields
 
         /// <summary>
-        /// A pool of SpanBasedStringBuilders as we don't want to be allocating every time a new one is requested.
+        /// Per-thread instance of the SpanBasedStringBuilder, created lazily.
         /// </summary>
-        private static DefaultObjectPool<SpanBasedStringBuilder> s_stringBuilderPool =
-            new DefaultObjectPool<SpanBasedStringBuilder>(new PooledObjectPolicy(), Environment.ProcessorCount);
-#endif
+        /// <remarks>
+        /// This field serves as a per-thread one-item object pool, which is adequate for most use
+        /// cases as the builder is not expected to be held for extended periods of time.
+        /// </remarks>
+        [ThreadStatic]
+        private static SpanBasedStringBuilder _spanBasedStringBuilder;
+
+        #endregion
 
         #region Public methods
 
@@ -87,11 +57,16 @@ namespace Microsoft.StringTools
         /// </remarks>
         public static SpanBasedStringBuilder GetSpanBasedStringBuilder()
         {
-#if NET35
-            return new SpanBasedStringBuilder();
-#else
-            return s_stringBuilderPool.Get();
-#endif
+            SpanBasedStringBuilder stringBuilder = _spanBasedStringBuilder;
+            if (stringBuilder == null)
+            {
+                return new SpanBasedStringBuilder();
+            }
+            else
+            {
+                _spanBasedStringBuilder = null;
+                return stringBuilder;
+            }
         }
 
         /// <summary>
@@ -118,13 +93,8 @@ namespace Microsoft.StringTools
         /// <param name="stringBuilder">The instance to return.</param>
         internal static void ReturnSpanBasedStringBuilder(SpanBasedStringBuilder stringBuilder)
         {
-            if (stringBuilder == null)
-            {
-                throw new ArgumentNullException(nameof(stringBuilder));
-            }
-#if !NET35
-            s_stringBuilderPool.Return(stringBuilder);
-#endif
+            stringBuilder.Clear();
+            _spanBasedStringBuilder = stringBuilder;
         }
     }
 }
