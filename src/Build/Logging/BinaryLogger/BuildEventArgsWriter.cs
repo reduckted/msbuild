@@ -778,25 +778,24 @@ namespace Microsoft.Build.Logging
             }
 
             HashKey hash = GetHash(nameValueList);
-            if (hashes.TryGetValue(hash, out var recordId))
+            if (!hashes.TryGetValue(hash, out var recordId))
             {
-                // length of our fake list is 1
-                Write(1);
+                hashes[hash] = nameValueRecordId;
 
-                // A special convention to reference a previously written list:
-                // write a list with a single item where the key is a string consisting of a single 0 byte
-                // and the value is the hash of the previous record
-                Write((byte)1);
-                Write((byte)0);
-                Write(recordId.ToString());
-                return;
+                WriteNameValueListRecord();
+
+                nameValueRecordId += 1;
             }
 
-            hashes[hash] = nameValueRecordId;
+            // length of our fake list is 1
+            Write(1);
 
-            WriteNameValueListRecord();
-
-            nameValueRecordId += 1;
+            // A special convention to reference a previously written list:
+            // write a list with a single item where the key is a string consisting of a single 0 byte
+            // and the value is the hash of the previous record
+            Write((byte)1);
+            Write((byte)0);
+            Write(recordId.ToString());
         }
 
         /// <summary>

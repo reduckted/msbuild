@@ -807,7 +807,7 @@ namespace Microsoft.Build.Logging
                     {
                         foreach (var property in record)
                         {
-                            result[property.Key] = value;
+                            result[property.Key] = property.Value;
                         }
                     }
                 }
@@ -899,7 +899,7 @@ namespace Microsoft.Build.Logging
                     {
                         foreach (var metadata in record)
                         {
-                            item.Metadata[metadata.Key] = value;
+                            item.Metadata[metadata.Key] = metadata.Value;
                         }
                     }
                 }
