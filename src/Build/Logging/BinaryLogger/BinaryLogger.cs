@@ -35,7 +35,12 @@ namespace Microsoft.Build.Logging
         //   - This was used in a now-reverted change but is the same as 9.
         // version 9:
         //   - new record kinds: EnvironmentVariableRead, PropertyReassignment, UninitializedPropertyRead
-        internal const int FileFormatVersion = 9;
+        // version 10:
+        //   - new record kind: NameValueList
+        //     hash and reuse name value lists such as properties, items and metadata
+        //     in a separate record and refer to those records from regular records
+        //     where a list used to be written in-place
+        internal const int FileFormatVersion = 10;
 
         private Stream stream;
         private BinaryWriter binaryWriter;

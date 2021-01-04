@@ -49,9 +49,18 @@ namespace Microsoft.Build.Logging
         {
             BinaryLogRecordKind recordKind = (BinaryLogRecordKind)ReadInt32();
 
-            while (IsBlob(recordKind))
+            // Skip over data storage records since they don't result in a BuildEventArgs.
+            // just ingest their data and continue.
+            while (IsAuxiliaryRecord(recordKind))
             {
-                ReadBlob(recordKind);
+                if (recordKind == BinaryLogRecordKind.ProjectImportArchive)
+                {
+                    ReadBlob(recordKind);
+                }
+                else if (recordKind == BinaryLogRecordKind.NameValueList)
+                {
+                    ReadNameValueList();
+                }
 
                 recordKind = (BinaryLogRecordKind)ReadInt32();
             }
@@ -131,12 +140,10 @@ namespace Microsoft.Build.Logging
             return result;
         }
 
-        /// <summary>
-        /// For now it's just the ProjectImportArchive.
-        /// </summary>
-        private static bool IsBlob(BinaryLogRecordKind recordKind)
+        private static bool IsAuxiliaryRecord(BinaryLogRecordKind recordKind)
         {
-            return recordKind == BinaryLogRecordKind.ProjectImportArchive;
+            return recordKind == BinaryLogRecordKind.ProjectImportArchive
+                || recordKind == BinaryLogRecordKind.NameValueList;
         }
 
         private void ReadBlob(BinaryLogRecordKind kind)
@@ -144,6 +151,24 @@ namespace Microsoft.Build.Logging
             int length = ReadInt32();
             byte[] bytes = binaryReader.ReadBytes(length);
             OnBlobRead?.Invoke(kind, bytes);
+        }
+
+        private readonly List<IReadOnlyList<KeyValuePair<string, string>>> nameValueLists = new List<IReadOnlyList<KeyValuePair<string, string>>>();
+
+        private void ReadNameValueList()
+        {
+            var list = new List<KeyValuePair<string, string>>();
+
+            int count = ReadInt32();
+            for (int i = 0; i < count; i++)
+            {
+                string key = ReadString();
+                string value = ReadString();
+                var kvp = new KeyValuePair<string, string>(key, value);
+                list.Add(kvp);
+            }
+
+            nameValueLists.Add(list);
         }
 
         private BuildEventArgs ReadProjectImportedEventArgs()
@@ -361,7 +386,7 @@ namespace Microsoft.Build.Logging
             var projectFile = ReadOptionalString();
             var targetFile = ReadOptionalString();
             var targetName = ReadOptionalString();
-            var targetOutputItemList = ReadItemList();
+            var targetOutputItemList = ReadTaskItemList();
 
             var e = new TargetFinishedEventArgs(
                 fields.Message,
@@ -764,13 +789,36 @@ namespace Microsoft.Build.Logging
         private Dictionary<string, string> ReadStringDictionary()
         {
             int count = ReadInt32();
-
             if (count == 0)
             {
                 return null;
             }
 
-            Dictionary<string, string> result = new Dictionary<string, string>(count);
+            var result = new Dictionary<string, string>(count);
+
+            if (count == 1)
+            {
+                string name = ReadString();
+                string value = ReadString();
+                if (name == "\0")
+                {
+                    var record = GetNameValueList(value);
+                    if (record != null)
+                    {
+                        foreach (var property in record)
+                        {
+                            result[property.Key] = value;
+                        }
+                    }
+                }
+                else
+                {
+                    result[name] = value;
+                }
+
+                return result;
+            }
+
             for (int i = 0; i < count; i++)
             {
                 string key = ReadString();
@@ -816,12 +864,53 @@ namespace Microsoft.Build.Logging
             }
         }
 
-        private ITaskItem ReadItem()
+        private IReadOnlyList<KeyValuePair<string, string>> GetNameValueList(string id)
+        {
+            if (int.TryParse(id, out int nameValueRecordIndex) &&
+                nameValueRecordIndex >= 0 &&
+                nameValueRecordIndex < this.nameValueLists.Count)
+            {
+                var list = this.nameValueLists[nameValueRecordIndex];
+                return list;
+            }
+
+            return Array.Empty<KeyValuePair<string, string>>();
+        }
+
+        private ITaskItem ReadTaskItem()
         {
             var item = new TaskItem();
             item.ItemSpec = ReadString();
 
             int count = ReadInt32();
+            if (count == 0)
+            {
+                return item;
+            }
+
+            if (count == 1)
+            {
+                string name = ReadString();
+                string value = ReadString();
+                if (name == "\0")
+                {
+                    var record = GetNameValueList(value);
+                    if (record != null)
+                    {
+                        foreach (var metadata in record)
+                        {
+                            item.Metadata[metadata.Key] = value;
+                        }
+                    }
+                }
+                else
+                {
+                    item.Metadata[name] = value;
+                }
+
+                return item;
+            }
+
             for (int i = 0; i < count; i++)
             {
                 string name = ReadString();
@@ -840,19 +929,22 @@ namespace Microsoft.Build.Logging
                 return null;
             }
 
-            var list = new List<DictionaryEntry>(count);
+            var list = new List<DictionaryEntry>();
 
             for (int i = 0; i < count; i++)
             {
-                string key = ReadString();
-                ITaskItem item = ReadItem();
-                list.Add(new DictionaryEntry(key, item));
+                string itemName = ReadString();
+                var items = ReadTaskItemList();
+                foreach (var item in items)
+                {
+                    list.Add(new DictionaryEntry(itemName, item));
+                }
             }
 
             return list;
         }
 
-        private IEnumerable ReadItemList()
+        private IEnumerable ReadTaskItemList()
         {
             int count = ReadInt32();
             if (count == 0)
@@ -864,7 +956,7 @@ namespace Microsoft.Build.Logging
 
             for (int i = 0; i < count; i++)
             {
-                ITaskItem item = ReadItem();
+                ITaskItem item = ReadTaskItem();
                 list.Add(item);
             }
 
