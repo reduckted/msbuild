@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using Microsoft.Build.Framework;
@@ -170,6 +171,8 @@ namespace Microsoft.Build.Logging
         /// </summary>
         public void Shutdown()
         {
+            LogMessage("Binlog overhead: " + stopwatch.Elapsed);
+
             Environment.SetEnvironmentVariable("MSBUILDTARGETOUTPUTLOGGING", _initialTargetOutputLogging);
             Environment.SetEnvironmentVariable("MSBUILDLOGIMPORTS", _initialLogImports ? "1" : "");
             Traits.Instance.EscapeHatches.LogProjectImports = _initialLogImports;
@@ -201,10 +204,14 @@ namespace Microsoft.Build.Logging
             Write(e);
         }
 
+        private Stopwatch stopwatch = new Stopwatch();
+
         private void Write(BuildEventArgs e)
         {
             if (stream != null)
             {
+                stopwatch.Start();
+
                 // TODO: think about queuing to avoid contention
                 lock (eventArgsWriter)
                 {
@@ -215,6 +222,8 @@ namespace Microsoft.Build.Logging
                 {
                     CollectImports(e);
                 }
+
+                stopwatch.Stop();
             }
         }
 
