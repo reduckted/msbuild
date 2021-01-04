@@ -945,9 +945,12 @@ namespace Microsoft.Build.Logging
 
             if (fileFormatVersion < 10)
             {
-                string key = ReadString();
-                ITaskItem item = ReadTaskItem();
-                list.Add(new DictionaryEntry(key, item));
+                for (int i = 0; i < count; i++)
+                {
+                    string key = ReadString();
+                    ITaskItem item = ReadTaskItem();
+                    list.Add(new DictionaryEntry(key, item));
+                }
             }
             else
             {
