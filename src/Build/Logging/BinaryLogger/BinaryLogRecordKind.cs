@@ -25,5 +25,6 @@
         UninitializedPropertyRead,
         EnvironmentVariableRead,
         PropertyInitialValueSet,
+        NameValueList,
     }
 }
