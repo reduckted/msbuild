@@ -33,7 +33,8 @@ namespace Microsoft.Build.Logging
             using (var stream = new FileStream(sourceFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
                 var gzipStream = new GZipStream(stream, CompressionMode.Decompress, leaveOpen: true);
-                var binaryReader = new BinaryReader(gzipStream);
+                var bufferedStream = new BufferedStream(gzipStream, 32768);
+                var binaryReader = new BinaryReader(bufferedStream);
 
                 int fileFormatVersion = binaryReader.ReadInt32();
 
