@@ -61,6 +61,10 @@ namespace Microsoft.Build.Logging
                 {
                     ReadNameValueList();
                 }
+                else if (recordKind == BinaryLogRecordKind.String)
+                {
+                    ReadStringRecord();
+                }
 
                 recordKind = (BinaryLogRecordKind)ReadInt32();
             }
@@ -143,7 +147,8 @@ namespace Microsoft.Build.Logging
         private static bool IsAuxiliaryRecord(BinaryLogRecordKind recordKind)
         {
             return recordKind == BinaryLogRecordKind.ProjectImportArchive
-                || recordKind == BinaryLogRecordKind.NameValueList;
+                || recordKind == BinaryLogRecordKind.NameValueList
+                || recordKind == BinaryLogRecordKind.String;
         }
 
         private void ReadBlob(BinaryLogRecordKind kind)
@@ -154,6 +159,7 @@ namespace Microsoft.Build.Logging
         }
 
         private readonly List<IReadOnlyList<KeyValuePair<string, string>>> nameValueLists = new List<IReadOnlyList<KeyValuePair<string, string>>>();
+        private readonly List<string> stringRecords = new List<string>();
 
         private void ReadNameValueList()
         {
@@ -169,6 +175,12 @@ namespace Microsoft.Build.Logging
             }
 
             nameValueLists.Add(list);
+        }
+
+        private void ReadStringRecord()
+        {
+            string text = ReadString();
+            stringRecords.Add(text);
         }
 
         private BuildEventArgs ReadProjectImportedEventArgs()
@@ -307,10 +319,10 @@ namespace Microsoft.Build.Logging
                 parentContext = ReadBuildEventContext();
             }
 
-            var projectFile = ReadOptionalString();
+            var projectFile = ReadDeduplicatedString();
             var projectId = ReadInt32();
-            var targetNames = ReadString();
-            var toolsVersion = ReadOptionalString();
+            var targetNames = ReadDeduplicatedString();
+            var toolsVersion = ReadDeduplicatedString();
 
             Dictionary<string, string> globalProperties = null;
 
@@ -650,7 +662,7 @@ namespace Microsoft.Build.Logging
 
             if ((flags & BuildEventArgsFieldFlags.Message) != 0)
             {
-                result.Message = ReadString();
+                result.Message = ReadDeduplicatedString();
             }
 
             if ((flags & BuildEventArgsFieldFlags.BuildEventContext) != 0)
@@ -680,22 +692,22 @@ namespace Microsoft.Build.Logging
 
             if ((flags & BuildEventArgsFieldFlags.Subcategory) != 0)
             {
-                result.Subcategory = ReadString();
+                result.Subcategory = ReadDeduplicatedString();
             }
 
             if ((flags & BuildEventArgsFieldFlags.Code) != 0)
             {
-                result.Code = ReadString();
+                result.Code = ReadDeduplicatedString();
             }
 
             if ((flags & BuildEventArgsFieldFlags.File) != 0)
             {
-                result.File = ReadString();
+                result.File = ReadDeduplicatedString();
             }
 
             if ((flags & BuildEventArgsFieldFlags.ProjectFile) != 0)
             {
-                result.ProjectFile = ReadString();
+                result.ProjectFile = ReadDeduplicatedString();
             }
 
             if ((flags & BuildEventArgsFieldFlags.LineNumber) != 0)
@@ -978,6 +990,25 @@ namespace Microsoft.Build.Logging
         private string ReadString()
         {
             return binaryReader.ReadString();
+        }
+
+        private string ReadDeduplicatedString()
+        {
+            int index = ReadInt32();
+            if (index == 0)
+            {
+                return null;
+            }
+            else if (index == 1)
+            {
+                return string.Empty;
+            }
+            else if (index > 0 && index < this.stringRecords.Count)
+            {
+                return this.stringRecords[index];
+            }
+
+            return string.Empty;
         }
 
         private int ReadInt32()

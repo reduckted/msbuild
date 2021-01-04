@@ -26,5 +26,6 @@
         EnvironmentVariableRead,
         PropertyInitialValueSet,
         NameValueList,
+        String,
     }
 }

@@ -181,11 +181,11 @@ namespace Microsoft.Build.Logging
                 Write(e.ParentProjectBuildEventContext);
             }
 
-            WriteOptionalString(e.ProjectFile);
+            WriteDeduplicatedString(e.ProjectFile);
 
             Write(e.ProjectId);
-            Write(e.TargetNames);
-            WriteOptionalString(e.ToolsVersion);
+            WriteDeduplicatedString(e.TargetNames);
+            WriteDeduplicatedString(e.ToolsVersion);
 
             if (e.GlobalProperties == null)
             {
@@ -410,7 +410,7 @@ namespace Microsoft.Build.Logging
         {
             if ((flags & BuildEventArgsFieldFlags.Message) != 0)
             {
-                Write(e.Message);
+                WriteDeduplicatedString(e.Message);
             }
 
             if ((flags & BuildEventArgsFieldFlags.BuildEventContext) != 0)
@@ -450,22 +450,22 @@ namespace Microsoft.Build.Logging
 
             if ((flags & BuildEventArgsFieldFlags.Subcategory) != 0)
             {
-                Write(e.Subcategory);
+                WriteDeduplicatedString(e.Subcategory);
             }
 
             if ((flags & BuildEventArgsFieldFlags.Code) != 0)
             {
-                Write(e.Code);
+                WriteDeduplicatedString(e.Code);
             }
 
             if ((flags & BuildEventArgsFieldFlags.File) != 0)
             {
-                Write(e.File);
+                WriteDeduplicatedString(e.File);
             }
 
             if ((flags & BuildEventArgsFieldFlags.ProjectFile) != 0)
             {
-                Write(e.ProjectFile);
+                WriteDeduplicatedString(e.ProjectFile);
             }
 
             if ((flags & BuildEventArgsFieldFlags.LineNumber) != 0)
@@ -780,6 +780,7 @@ namespace Microsoft.Build.Logging
             HashKey hash = GetHash(nameValueList);
             if (!hashes.TryGetValue(hash, out var recordId))
             {
+                recordId = nameValueRecordId;
                 hashes[hash] = nameValueRecordId;
 
                 WriteNameValueListRecord();
@@ -888,16 +889,64 @@ namespace Microsoft.Build.Logging
             binaryWriter.Write(boolean);
         }
 
+        private readonly Dictionary<HashKey, int> stringHashes = new Dictionary<HashKey, int>();
+        private int stringRecordId = 0;
+
+        private void WriteDeduplicatedString(string text)
+        {
+            if (text == null)
+            {
+                binaryWriter.Write((byte)0);
+                return;
+            }
+            else if (text.Length == 0)
+            {
+                binaryWriter.Write((byte)1);
+                return;
+            }
+
+            var hash = new HashKey(text);
+            if (!stringHashes.TryGetValue(hash, out var recordId))
+            {
+                recordId = stringRecordId;
+                stringHashes[hash] = stringRecordId;
+
+                WriteStringRecord(text);
+
+                stringRecordId += 1;
+            }
+
+            Write(recordId);
+        }
+
+        private void WriteStringRecord(string text)
+        {
+            try
+            {
+                // Switch the binaryWriter used by the Write* methods to the direct underlying stream writer.
+                // We want this record to precede the record we're currently writing to currentRecordWriter
+                // which is backed by a MemoryStream buffer
+                binaryWriter = this.originalBinaryWriter;
+
+                Write(BinaryLogRecordKind.String);
+                Write(text);
+            }
+            finally
+            {
+                // switch back to continue writing the current record to the memory stream
+                binaryWriter = this.currentRecordWriter;
+            }
+        }
+
         private void Write(string text)
         {
-            if (text != null)
+            if (string.IsNullOrEmpty(text))
             {
-                binaryWriter.Write(text);
+                binaryWriter.Write((byte)0);
+                return;
             }
-            else
-            {
-                binaryWriter.Write(false);
-            }
+
+            binaryWriter.Write(text);
         }
 
         private void WriteOptionalString(string text)
