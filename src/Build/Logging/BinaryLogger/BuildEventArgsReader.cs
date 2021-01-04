@@ -319,10 +319,10 @@ namespace Microsoft.Build.Logging
                 parentContext = ReadBuildEventContext();
             }
 
-            var projectFile = ReadDeduplicatedString();
+            var projectFile = ReadOptionalDeduplicatedString();
             var projectId = ReadInt32();
             var targetNames = ReadDeduplicatedString();
-            var toolsVersion = ReadDeduplicatedString();
+            var toolsVersion = ReadOptionalDeduplicatedString();
 
             Dictionary<string, string> globalProperties = null;
 
@@ -943,13 +943,22 @@ namespace Microsoft.Build.Logging
 
             var list = new List<DictionaryEntry>();
 
-            for (int i = 0; i < count; i++)
+            if (fileFormatVersion < 10)
             {
-                string itemName = ReadString();
-                var items = ReadTaskItemList();
-                foreach (var item in items)
+                string key = ReadString();
+                ITaskItem item = ReadTaskItem();
+                list.Add(new DictionaryEntry(key, item));
+            }
+            else
+            {
+                for (int i = 0; i < count; i++)
                 {
-                    list.Add(new DictionaryEntry(itemName, item));
+                    string itemName = ReadString();
+                    var items = ReadTaskItemList();
+                    foreach (var item in items)
+                    {
+                        list.Add(new DictionaryEntry(itemName, item));
+                    }
                 }
             }
 
@@ -992,8 +1001,23 @@ namespace Microsoft.Build.Logging
             return binaryReader.ReadString();
         }
 
+        private string ReadOptionalDeduplicatedString()
+        {
+            if (fileFormatVersion < 10)
+            {
+                return ReadOptionalString();
+            }
+
+            return ReadDeduplicatedString();
+        }
+
         private string ReadDeduplicatedString()
         {
+            if (fileFormatVersion < 10)
+            {
+                return ReadString();
+            }
+
             int index = ReadInt32();
             if (index == 0)
             {
