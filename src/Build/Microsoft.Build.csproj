@@ -26,6 +26,10 @@
 
     <!-- Do not generate a warning that our 'stable' package should not have a prerelease dependency. -->
     <NoWarn>$(NoWarn);NU5104</NoWarn>
+
+    <!-- Fnv-1a 64-bit hash we use in BuildEventArgsWriter to deduplicate strings uses UInt64 which is not CLS-compliant -->
+    <NoWarn>$(NoWarn);CS3001;CS3002;CS3003</NoWarn>
+
   </PropertyGroup>
 
   <ItemGroup>
