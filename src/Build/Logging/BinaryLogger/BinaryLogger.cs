@@ -183,8 +183,8 @@ namespace Microsoft.Build.Logging
                 {
                     eventArgsWriter.WriteBlob(BinaryLogRecordKind.ProjectImportArchive, projectImportsCollector.GetAllBytes());
                 }
-                projectImportsCollector.Close();
 
+                projectImportsCollector.Close();
                 projectImportsCollector = null;
             }
 
