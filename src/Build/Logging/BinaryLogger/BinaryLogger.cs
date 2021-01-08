@@ -171,7 +171,7 @@ namespace Microsoft.Build.Logging
         /// </summary>
         public void Shutdown()
         {
-            LogMessage("Binlog overhead: " + stopwatch.Elapsed);
+            LogMessage("Binlog overhead=" + stopwatch.Elapsed);
 
             Environment.SetEnvironmentVariable("MSBUILDTARGETOUTPUTLOGGING", _initialTargetOutputLogging);
             Environment.SetEnvironmentVariable("MSBUILDLOGIMPORTS", _initialLogImports ? "1" : "");
