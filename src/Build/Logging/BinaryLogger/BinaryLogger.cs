@@ -143,6 +143,7 @@ namespace Microsoft.Build.Logging
             }
 
             stream = new GZipStream(stream, CompressionLevel.Optimal);
+            stream = new BufferedStream(stream, bufferSize: 32768);
             binaryWriter = new BinaryWriter(stream);
             eventArgsWriter = new BuildEventArgsWriter(binaryWriter);
 
