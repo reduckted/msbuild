@@ -845,6 +845,8 @@ namespace Microsoft.Build.Logging
 
         private class TaskItem : ITaskItem
         {
+            private static readonly Dictionary<string, string> emptyMetadata = new Dictionary<string, string>();
+
             public string ItemSpec { get; set; }
             public IDictionary<string, string> Metadata { get; }
 
@@ -856,7 +858,7 @@ namespace Microsoft.Build.Logging
             public TaskItem(string itemSpec, IDictionary<string, string> metadata)
             {
                 ItemSpec = itemSpec;
-                Metadata = metadata;
+                Metadata = metadata ?? emptyMetadata;
             }
 
             public int MetadataCount => Metadata.Count;
@@ -918,10 +920,10 @@ namespace Microsoft.Build.Logging
                 return null;
             }
 
-            var list = new List<DictionaryEntry>();
-
+            List<DictionaryEntry> list;
             if (fileFormatVersion < 10)
             {
+                list = new List<DictionaryEntry>(count);
                 for (int i = 0; i < count; i++)
                 {
                     string key = ReadString();
@@ -931,6 +933,7 @@ namespace Microsoft.Build.Logging
             }
             else
             {
+                list = new List<DictionaryEntry>();
                 for (int i = 0; i < count; i++)
                 {
                     string itemName = ReadString();
