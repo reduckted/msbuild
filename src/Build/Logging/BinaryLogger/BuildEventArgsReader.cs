@@ -301,8 +301,11 @@ namespace Microsoft.Build.Logging
                     var d = new Dictionary<EvaluationLocation, ProfiledLocation>(count);
                     for (int i = 0; i < count; i++)
                     {
-                        d.Add(ReadEvaluationLocation(), ReadProfiledLocation());
+                        var evaluationLocation = ReadEvaluationLocation();
+                        var profiledLocation = ReadProfiledLocation();
+                        d[evaluationLocation] = profiledLocation;
                     }
+
                     e.ProfilerResult = new ProfilerResult(d);
                 }
             }
@@ -800,6 +803,11 @@ namespace Microsoft.Build.Logging
 
         private IDictionary<string, string> ReadStringDictionary()
         {
+            if (fileFormatVersion < 10)
+            {
+                return ReadLegacyStringDictionary();
+            }
+
             int index = ReadInt32();
             if (index == 0)
             {
@@ -813,6 +821,26 @@ namespace Microsoft.Build.Logging
             }
 
             return null;
+        }
+
+        private IDictionary<string, string> ReadLegacyStringDictionary()
+        {
+            int count = ReadInt32();
+            if (count == 0)
+            {
+                return null;
+            }
+
+            var result = new Dictionary<string, string>(count);
+
+            for (int i = 0; i < count; i++)
+            {
+                string key = ReadString();
+                string value = ReadString();
+                result[key] = value;
+            }
+
+            return result;
         }
 
         private class TaskItem : ITaskItem
@@ -837,7 +865,7 @@ namespace Microsoft.Build.Logging
 
             public IDictionary CloneCustomMetadata()
             {
-                return Metadata.ToDictionary(kvp => kvp);
+                return (IDictionary)Metadata;
             }
 
             public void CopyMetadataTo(ITaskItem destinationItem)
