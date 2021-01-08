@@ -63,17 +63,18 @@ namespace Microsoft.Build.Logging
             // just ingest their data and continue.
             while (IsAuxiliaryRecord(recordKind))
             {
-                if (recordKind == BinaryLogRecordKind.ProjectImportArchive)
+                // these are ordered by commonality
+                if (recordKind == BinaryLogRecordKind.String)
                 {
-                    ReadBlob(recordKind);
+                    ReadStringRecord();
                 }
                 else if (recordKind == BinaryLogRecordKind.NameValueList)
                 {
                     ReadNameValueList();
                 }
-                else if (recordKind == BinaryLogRecordKind.String)
+                else if (recordKind == BinaryLogRecordKind.ProjectImportArchive)
                 {
-                    ReadStringRecord();
+                    ReadBlob(recordKind);
                 }
 
                 recordKind = (BinaryLogRecordKind)ReadInt32();
