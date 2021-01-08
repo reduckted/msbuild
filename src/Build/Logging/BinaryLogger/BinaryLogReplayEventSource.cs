@@ -46,7 +46,7 @@ namespace Microsoft.Build.Logging
                     throw new NotSupportedException(text);
                 }
 
-                var reader = new BuildEventArgsReader(binaryReader, fileFormatVersion);
+                using var reader = new BuildEventArgsReader(binaryReader, fileFormatVersion);
                 while (true)
                 {
                     if (cancellationToken.IsCancellationRequested)
