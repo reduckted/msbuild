@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Framework.Profiler;
@@ -158,20 +159,19 @@ namespace Microsoft.Build.Logging
             OnBlobRead?.Invoke(kind, bytes);
         }
 
-        private readonly List<IReadOnlyList<KeyValuePair<string, string>>> nameValueLists = new List<IReadOnlyList<KeyValuePair<string, string>>>();
+        private readonly List<IDictionary<string, string>> nameValueLists = new List<IDictionary<string, string>>();
         private readonly List<string> stringRecords = new List<string>();
 
         private void ReadNameValueList()
         {
-            var list = new List<KeyValuePair<string, string>>();
+            var list = new Dictionary<string, string>();
 
             int count = ReadInt32();
             for (int i = 0; i < count; i++)
             {
                 string key = ReadDeduplicatedString();
                 string value = ReadDeduplicatedString();
-                var kvp = new KeyValuePair<string, string>(key, value);
-                list.Add(kvp);
+                list[key] = value;
             }
 
             nameValueLists.Add(list);
@@ -324,7 +324,7 @@ namespace Microsoft.Build.Logging
             var targetNames = ReadDeduplicatedString();
             var toolsVersion = ReadOptionalDeduplicatedString();
 
-            Dictionary<string, string> globalProperties = null;
+            IDictionary<string, string> globalProperties = null;
 
             if (fileFormatVersion > 6)
             {
@@ -798,61 +798,46 @@ namespace Microsoft.Build.Logging
             return result;
         }
 
-        private Dictionary<string, string> ReadStringDictionary()
+        private IDictionary<string, string> ReadStringDictionary()
         {
-            int count = ReadInt32();
-            if (count == 0)
+            int index = ReadInt32();
+            if (index == 0)
             {
                 return null;
             }
 
-            var result = new Dictionary<string, string>(count);
-
-            if (count == 1)
+            var record = GetNameValueList(index);
+            if (record != null)
             {
-                string name = ReadString();
-                string value = ReadString();
-                if (name == "\0")
-                {
-                    var record = GetNameValueList(value);
-                    if (record != null)
-                    {
-                        foreach (var property in record)
-                        {
-                            result[property.Key] = property.Value;
-                        }
-                    }
-                }
-                else
-                {
-                    result[name] = value;
-                }
-
-                return result;
+                return record;
             }
 
-            for (int i = 0; i < count; i++)
-            {
-                string key = ReadString();
-                string value = ReadString();
-                result[key] = value;
-            }
-
-            return result;
+            return null;
         }
 
         private class TaskItem : ITaskItem
         {
             public string ItemSpec { get; set; }
-            public Dictionary<string, string> Metadata { get; } = new Dictionary<string, string>();
+            public IDictionary<string, string> Metadata { get; }
+
+            public TaskItem()
+            {
+                Metadata = new Dictionary<string, string>();
+            }
+
+            public TaskItem(string itemSpec, IDictionary<string, string> metadata)
+            {
+                ItemSpec = itemSpec;
+                Metadata = metadata;
+            }
 
             public int MetadataCount => Metadata.Count;
 
-            public ICollection MetadataNames => Metadata.Keys;
+            public ICollection MetadataNames => (ICollection)Metadata.Keys;
 
             public IDictionary CloneCustomMetadata()
             {
-                return Metadata;
+                return Metadata.ToDictionary(kvp => kvp);
             }
 
             public void CopyMetadataTo(ITaskItem destinationItem)
@@ -876,63 +861,25 @@ namespace Microsoft.Build.Logging
             }
         }
 
-        private IReadOnlyList<KeyValuePair<string, string>> GetNameValueList(string id)
+        private IDictionary<string, string> GetNameValueList(int id)
         {
-            if (int.TryParse(id, out int nameValueRecordIndex))
+            id -= BuildEventArgsWriter.NameValueRecordStartIndex;
+            if (id >= 0 && id < this.nameValueLists.Count)
             {
-                nameValueRecordIndex -= BuildEventArgsWriter.NameValueRecordStartIndex;
-                if (nameValueRecordIndex >= 0 && nameValueRecordIndex < this.nameValueLists.Count)
-                {
-                    var list = this.nameValueLists[nameValueRecordIndex];
-                    return list;
-                }
+                var list = this.nameValueLists[id];
+                return list;
             }
 
-            return Array.Empty<KeyValuePair<string, string>>();
+            return new Dictionary<string, string>();
         }
 
         private ITaskItem ReadTaskItem()
         {
-            var item = new TaskItem();
-            item.ItemSpec = ReadString();
+            string itemSpec = ReadString();
+            var metadata = ReadStringDictionary();
 
-            int count = ReadInt32();
-            if (count == 0)
-            {
-                return item;
-            }
-
-            if (count == 1)
-            {
-                string name = ReadString();
-                string value = ReadString();
-                if (name == "\0")
-                {
-                    var record = GetNameValueList(value);
-                    if (record != null)
-                    {
-                        foreach (var metadata in record)
-                        {
-                            item.Metadata[metadata.Key] = metadata.Value;
-                        }
-                    }
-                }
-                else
-                {
-                    item.Metadata[name] = value;
-                }
-
-                return item;
-            }
-
-            for (int i = 0; i < count; i++)
-            {
-                string name = ReadString();
-                string value = ReadString();
-                item.Metadata[name] = value;
-            }
-
-            return item;
+            var taskItem = new TaskItem(itemSpec, metadata);
+            return taskItem;
         }
 
         private IEnumerable ReadItems()
