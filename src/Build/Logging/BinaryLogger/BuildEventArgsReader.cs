@@ -889,6 +889,11 @@ namespace Microsoft.Build.Logging
             {
                 throw new NotImplementedException();
             }
+
+            public override string ToString()
+            {
+                return $"{ItemSpec} Metadata: {MetadataCount}";
+            }
         }
 
         private IDictionary<string, string> GetNameValueList(int id)
