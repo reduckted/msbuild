@@ -196,8 +196,8 @@ namespace Microsoft.Build.Logging
                 importIgnored = ReadBoolean();
             }
 
-            var importedProjectFile = ReadOptionalDeduplicatedString();
-            var unexpandedProject = ReadOptionalDeduplicatedString();
+            var importedProjectFile = ReadOptionalString();
+            var unexpandedProject = ReadOptionalString();
 
             var e = new ProjectImportedEventArgs(
                 fields.LineNumber,
@@ -219,9 +219,9 @@ namespace Microsoft.Build.Logging
             var fields = ReadBuildEventArgsFields();
             // Read unused Importance, it defaults to Low
             ReadInt32();
-            var targetFile = ReadOptionalDeduplicatedString();
-            var targetName = ReadOptionalDeduplicatedString();
-            var parentTarget = ReadOptionalDeduplicatedString();
+            var targetFile = ReadOptionalString();
+            var targetName = ReadOptionalString();
+            var parentTarget = ReadOptionalString();
             var buildReason = (TargetBuiltReason)ReadInt32();
 
             var e = new TargetSkippedEventArgs(
@@ -321,10 +321,10 @@ namespace Microsoft.Build.Logging
                 parentContext = ReadBuildEventContext();
             }
 
-            var projectFile = ReadOptionalDeduplicatedString();
+            var projectFile = ReadOptionalString();
             var projectId = ReadInt32();
             var targetNames = ReadDeduplicatedString();
-            var toolsVersion = ReadOptionalDeduplicatedString();
+            var toolsVersion = ReadOptionalString();
 
             IDictionary<string, string> globalProperties = null;
 
@@ -357,7 +357,7 @@ namespace Microsoft.Build.Logging
         private BuildEventArgs ReadProjectFinishedEventArgs()
         {
             var fields = ReadBuildEventArgsFields();
-            var projectFile = ReadOptionalDeduplicatedString();
+            var projectFile = ReadOptionalString();
             var succeeded = ReadBoolean();
 
             var e = new ProjectFinishedEventArgs(
@@ -373,10 +373,10 @@ namespace Microsoft.Build.Logging
         private BuildEventArgs ReadTargetStartedEventArgs()
         {
             var fields = ReadBuildEventArgsFields();
-            var targetName = ReadOptionalDeduplicatedString();
-            var projectFile = ReadOptionalDeduplicatedString();
-            var targetFile = ReadOptionalDeduplicatedString();
-            var parentTarget = ReadOptionalDeduplicatedString();
+            var targetName = ReadOptionalString();
+            var projectFile = ReadOptionalString();
+            var targetFile = ReadOptionalString();
+            var parentTarget = ReadOptionalString();
             // BuildReason was introduced in version 4
             var buildReason = fileFormatVersion > 3 ? (TargetBuiltReason) ReadInt32() : TargetBuiltReason.None;
 
@@ -397,9 +397,9 @@ namespace Microsoft.Build.Logging
         {
             var fields = ReadBuildEventArgsFields();
             var succeeded = ReadBoolean();
-            var projectFile = ReadOptionalDeduplicatedString();
-            var targetFile = ReadOptionalDeduplicatedString();
-            var targetName = ReadOptionalDeduplicatedString();
+            var projectFile = ReadOptionalString();
+            var targetFile = ReadOptionalString();
+            var targetName = ReadOptionalString();
             var targetOutputItemList = ReadTaskItemList();
 
             var e = new TargetFinishedEventArgs(
@@ -418,9 +418,9 @@ namespace Microsoft.Build.Logging
         private BuildEventArgs ReadTaskStartedEventArgs()
         {
             var fields = ReadBuildEventArgsFields();
-            var taskName = ReadOptionalDeduplicatedString();
-            var projectFile = ReadOptionalDeduplicatedString();
-            var taskFile = ReadOptionalDeduplicatedString();
+            var taskName = ReadOptionalString();
+            var projectFile = ReadOptionalString();
+            var taskFile = ReadOptionalString();
 
             var e = new TaskStartedEventArgs(
                 fields.Message,
@@ -437,9 +437,9 @@ namespace Microsoft.Build.Logging
         {
             var fields = ReadBuildEventArgsFields();
             var succeeded = ReadBoolean();
-            var taskName = ReadOptionalDeduplicatedString();
-            var projectFile = ReadOptionalDeduplicatedString();
-            var taskFile = ReadOptionalDeduplicatedString();
+            var taskName = ReadOptionalString();
+            var projectFile = ReadOptionalString();
+            var taskFile = ReadOptionalString();
 
             var e = new TaskFinishedEventArgs(
                 fields.Message,
@@ -524,8 +524,8 @@ namespace Microsoft.Build.Logging
         {
             var fields = ReadBuildEventArgsFields();
             var importance = (MessageImportance)ReadInt32();
-            var commandLine = ReadOptionalDeduplicatedString();
-            var taskName = ReadOptionalDeduplicatedString();
+            var commandLine = ReadOptionalString();
+            var taskName = ReadOptionalString();
 
             var e = new TaskCommandLineEventArgs(
                 commandLine,
@@ -646,10 +646,10 @@ namespace Microsoft.Build.Logging
         /// <param name="fields"></param>
         private void ReadDiagnosticFields(BuildEventArgsFields fields)
         {
-            fields.Subcategory = ReadOptionalDeduplicatedString();
-            fields.Code = ReadOptionalDeduplicatedString();
-            fields.File = ReadOptionalDeduplicatedString();
-            fields.ProjectFile = ReadOptionalDeduplicatedString();
+            fields.Subcategory = ReadOptionalString();
+            fields.Code = ReadOptionalString();
+            fields.File = ReadOptionalString();
+            fields.ProjectFile = ReadOptionalString();
             fields.LineNumber = ReadInt32();
             fields.ColumnNumber = ReadInt32();
             fields.EndLineNumber = ReadInt32();
@@ -971,28 +971,23 @@ namespace Microsoft.Build.Logging
             return list;
         }
 
-        private string ReadOptionalString()
-        {
-            if (ReadBoolean())
-            {
-                return ReadString();
-            }
-            else
-            {
-                return null;
-            }
-        }
-
         private string ReadString()
         {
             return binaryReader.ReadString();
         }
 
-        private string ReadOptionalDeduplicatedString()
+        private string ReadOptionalString()
         {
             if (fileFormatVersion < 10)
             {
-                return ReadOptionalString();
+                if (ReadBoolean())
+                {
+                    return ReadString();
+                }
+                else
+                {
+                    return null;
+                }
             }
 
             return ReadDeduplicatedString();
@@ -1086,10 +1081,10 @@ namespace Microsoft.Build.Logging
 
         private EvaluationLocation ReadEvaluationLocation()
         {
-            var elementName = ReadOptionalDeduplicatedString();
-            var description = ReadOptionalDeduplicatedString();
-            var evaluationDescription = ReadOptionalDeduplicatedString();
-            var file = ReadOptionalDeduplicatedString();
+            var elementName = ReadOptionalString();
+            var description = ReadOptionalString();
+            var evaluationDescription = ReadOptionalString();
+            var file = ReadOptionalString();
             var kind = (EvaluationLocationKind)ReadInt32();
             var evaluationPass = (EvaluationPass)ReadInt32();
 
