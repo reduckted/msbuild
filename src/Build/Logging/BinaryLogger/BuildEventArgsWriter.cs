@@ -120,9 +120,20 @@ namespace Microsoft.Build.Logging
 
         public void WriteBlob(BinaryLogRecordKind kind, byte[] bytes)
         {
-            Write(kind);
-            Write(bytes.Length);
-            Write(bytes);
+            try
+            {
+                // write the blob directly to the underlying writer,
+                // bypassing the memory stream
+                binaryWriter = originalBinaryWriter;
+
+                Write(kind);
+                Write(bytes.Length);
+                Write(bytes);
+            }
+            finally
+            {
+                binaryWriter = currentRecordWriter;
+            }
         }
 
         private void Write(BuildStartedEventArgs e)
@@ -348,7 +359,7 @@ namespace Microsoft.Build.Logging
             WriteMessageFields(e);
             WriteDeduplicatedString(e.TargetFile);
             WriteDeduplicatedString(e.TargetName);
-            WriteDeduplicatedString (e.ParentTarget);
+            WriteDeduplicatedString(e.ParentTarget);
             Write((int)e.BuildReason);
         }
 
