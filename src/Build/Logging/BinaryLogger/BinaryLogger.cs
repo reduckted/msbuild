@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using Microsoft.Build.Framework;
@@ -37,10 +36,11 @@ namespace Microsoft.Build.Logging
         // version 9:
         //   - new record kinds: EnvironmentVariableRead, PropertyReassignment, UninitializedPropertyRead
         // version 10:
-        //   - new record kind: NameValueList
-        //     hash and reuse name value lists such as properties, items and metadata
-        //     in a separate record and refer to those records from regular records
-        //     where a list used to be written in-place
+        //   - new record kinds:
+        //      * String - deduplicate strings by hashing and write a string record before it's used
+        //      * NameValueList - deduplicate arrays of name-value pairs such as properties, items and metadata
+        //                        in a separate record and refer to those records from regular records
+        //                        where a list used to be written in-place
         internal const int FileFormatVersion = 10;
 
         private Stream stream;
@@ -172,8 +172,6 @@ namespace Microsoft.Build.Logging
         /// </summary>
         public void Shutdown()
         {
-            LogMessage("Binlog overhead=" + stopwatch.Elapsed);
-
             Environment.SetEnvironmentVariable("MSBUILDTARGETOUTPUTLOGGING", _initialTargetOutputLogging);
             Environment.SetEnvironmentVariable("MSBUILDLOGIMPORTS", _initialLogImports ? "1" : "");
             Traits.Instance.EscapeHatches.LogProjectImports = _initialLogImports;
@@ -205,14 +203,10 @@ namespace Microsoft.Build.Logging
             Write(e);
         }
 
-        private Stopwatch stopwatch = new Stopwatch();
-
         private void Write(BuildEventArgs e)
         {
             if (stream != null)
             {
-                stopwatch.Start();
-
                 // TODO: think about queuing to avoid contention
                 lock (eventArgsWriter)
                 {
@@ -223,8 +217,6 @@ namespace Microsoft.Build.Logging
                 {
                     CollectImports(e);
                 }
-
-                stopwatch.Stop();
             }
         }
 
