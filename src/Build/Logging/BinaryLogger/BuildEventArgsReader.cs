@@ -17,6 +17,25 @@ namespace Microsoft.Build.Logging
         private readonly BinaryReader binaryReader;
         private readonly int fileFormatVersion;
 
+        /// <summary>
+        /// A list of dictionaries we've encountered so far. Dictionaries are referred to by their order in this list.
+        /// </summary>
+        private readonly List<IDictionary<string, string>> nameValueLists = new List<IDictionary<string, string>>();
+
+        /// <summary>
+        /// A list of string records we've encountered so far. If it's a small string, it will be the string directly.
+        /// If it's a large string, it will be a pointer into a temporary page file where the string content will be
+        /// written out to. This is necessary so we don't keep all the strings in memory when reading large binlogs.
+        /// We will OOM otherwise.
+        /// </summary>
+        private readonly List<object> stringRecords = new List<object>();
+
+        /// <summary>
+        /// A "page-file" for storing strings we've read so far. Keeping them in memory would OOM the 32-bit MSBuild
+        /// when reading large binlogs. This is a no-op in a 64-bit process.
+        /// </summary>
+        private StringStorage stringStorage = new StringStorage();
+
         // reflection is needed to set these three fields because public constructors don't provide
         // a way to set these from the outside
         private static FieldInfo buildEventArgsFieldThreadId =
@@ -157,9 +176,9 @@ namespace Microsoft.Build.Logging
 
         private static bool IsAuxiliaryRecord(BinaryLogRecordKind recordKind)
         {
-            return recordKind == BinaryLogRecordKind.ProjectImportArchive
+            return recordKind == BinaryLogRecordKind.String
                 || recordKind == BinaryLogRecordKind.NameValueList
-                || recordKind == BinaryLogRecordKind.String;
+                || recordKind == BinaryLogRecordKind.ProjectImportArchive;
         }
 
         private void ReadBlob(BinaryLogRecordKind kind)
@@ -168,10 +187,6 @@ namespace Microsoft.Build.Logging
             byte[] bytes = binaryReader.ReadBytes(length);
             OnBlobRead?.Invoke(kind, bytes);
         }
-
-        private readonly List<IDictionary<string, string>> nameValueLists = new List<IDictionary<string, string>>();
-        private readonly List<object> stringRecords = new List<object>();
-        private StringStorage stringStorage = new StringStorage();
 
         private void ReadNameValueList()
         {
@@ -186,6 +201,18 @@ namespace Microsoft.Build.Logging
             }
 
             nameValueLists.Add(list);
+        }
+
+        private IDictionary<string, string> GetNameValueList(int id)
+        {
+            id -= BuildEventArgsWriter.NameValueRecordStartIndex;
+            if (id >= 0 && id < nameValueLists.Count)
+            {
+                var list = nameValueLists[id];
+                return list;
+            }
+
+            return new Dictionary<string, string>();
         }
 
         private void ReadStringRecord()
@@ -350,7 +377,7 @@ namespace Microsoft.Build.Logging
             }
 
             var propertyList = ReadPropertyList();
-            var itemList = ReadItems();
+            var itemList = ReadProjectItems();
 
             var e = new ProjectStartedEventArgs(
                 projectId,
@@ -908,18 +935,6 @@ namespace Microsoft.Build.Logging
             }
         }
 
-        private IDictionary<string, string> GetNameValueList(int id)
-        {
-            id -= BuildEventArgsWriter.NameValueRecordStartIndex;
-            if (id >= 0 && id < this.nameValueLists.Count)
-            {
-                var list = this.nameValueLists[id];
-                return list;
-            }
-
-            return new Dictionary<string, string>();
-        }
-
         private ITaskItem ReadTaskItem()
         {
             string itemSpec = ReadDeduplicatedString();
@@ -929,7 +944,7 @@ namespace Microsoft.Build.Logging
             return taskItem;
         }
 
-        private IEnumerable ReadItems()
+        private IEnumerable ReadProjectItems()
         {
             int count = ReadInt32();
             if (count == 0)
@@ -938,14 +953,19 @@ namespace Microsoft.Build.Logging
             }
 
             List<DictionaryEntry> list;
+
+            // starting with format version 10 project items are grouped by name
+            // so we only have to write the name once, and then the count of items
+            // with that name. When reading a legacy binlog we need to read the
+            // old style flat list where the name is duplicated for each item.
             if (fileFormatVersion < 10)
             {
                 list = new List<DictionaryEntry>(count);
                 for (int i = 0; i < count; i++)
                 {
-                    string key = ReadString();
+                    string itemName = ReadString();
                     ITaskItem item = ReadTaskItem();
-                    list.Add(new DictionaryEntry(key, item));
+                    list.Add(new DictionaryEntry(itemName, item));
                 }
             }
             else
@@ -1127,12 +1147,26 @@ namespace Microsoft.Build.Logging
             return new EvaluationLocation(0, null, evaluationPass, evaluationDescription, file, line, elementName, description, kind);
         }
 
+        /// <summary>
+        /// Locates the string in the page file.
+        /// </summary>
         internal class StringPosition
         {
+            /// <summary>
+            /// Offset in the file.
+            /// </summary>
             public long FilePosition;
+
+            /// <summary>
+            /// The length of the string in chars (not bytes).
+            /// </summary>
             public int StringLength;
         }
 
+        /// <summary>
+        /// Stores large strings in a temp file on disk, to avoid keeping all strings in memory.
+        /// Only creates a file for 32-bit MSBuild.exe, just returns the string directly on 64-bit.
+        /// </summary>
         internal class StringStorage : IDisposable
         {
             private string filePath;
