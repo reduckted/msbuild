@@ -16,7 +16,7 @@ variables:
   - ${{ if startsWith(variables['Build.SourceBranch'], 'refs/heads/exp/') }}:
     - name: SourceBranch
       value: master
-  - ${{ if ne('$(OptProfDropName)', '') }}:
+  - ${{ if and(ne('$(OptProfDropName)', ''),ne('$(OptProfDropName)', '')) }}:
     - name: SourceBranch
       value: ''
   - name: _DotNetArtifactsCategory
@@ -79,6 +79,9 @@ stages:
     - task: ms-vseng.MicroBuildTasks.32f78468-e895-4f47-962c-58a699361df8.MicroBuildSwixPlugin@1
       inputs:
         dropName: $(VisualStudio.DropName)
+    
+    - script: |
+        echo $(OptProfDropName)
 
     - script: eng/CIBuild.cmd
                 -configuration $(BuildConfiguration)
