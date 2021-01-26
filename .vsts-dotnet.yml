@@ -81,6 +81,7 @@ stages:
         dropName: $(VisualStudio.DropName)
     
     - script: |
+        echo "This is the OptProfDropName value"
         echo $(OptProfDropName)
 
     - script: eng/CIBuild.cmd
