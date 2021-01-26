@@ -16,7 +16,7 @@ variables:
   - ${{ if startsWith(variables['Build.SourceBranch'], 'refs/heads/exp/') }}:
     - name: SourceBranch
       value: master
-  - ${{ if and(ne('$(OptProfDropName)', ''),ne('$(OptProfDropName)', '')) }}:
+  - ${{ if ne($[variables.OptProfDropName], '') }}:
     - name: SourceBranch
       value: ''
   - name: _DotNetArtifactsCategory
