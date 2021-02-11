@@ -1672,13 +1672,15 @@ namespace Microsoft.Build.Shared
                 // We will mostly be comparing ASCII characters, check this first
                 if (inputChar < 128 && patternChar < 128)
                 {
-                    if (inputChar >= 'A' && inputChar <= 'Z' && patternChar >= 'a' && patternChar <= 'z')
+                    if (inputChar >= 'A' && inputChar <= 'Z')
                     {
-                        return inputChar + 32 == patternChar;
+                        // Evaluates to true if patternChar is equal to inputChar or to the lower-case counter-part.
+                        return inputChar == (patternChar & ~0x20);
                     }
-                    if (inputChar >= 'a' && inputChar <= 'z' && patternChar >= 'A' && patternChar <= 'Z')
+                    if (inputChar >= 'a' && inputChar <= 'z')
                     {
-                        return inputChar == patternChar + 32;
+                        // Evaluates to true if patternChar is equal to inputChar or to the upper-case counter-part.
+                        return inputChar == (patternChar | 0x20);
                     }
                     return inputChar == patternChar;
                 }
