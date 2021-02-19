@@ -99,16 +99,6 @@ namespace Microsoft.Build.BackEnd
         /// </summary>
         private SharedReadBuffer _sharedReadBuffer;
 
-        /// <summary>
-        /// A way to cache a byte array when writing out packets
-        /// </summary>
-        private MemoryStream _packetStream;
-
-        /// <summary>
-        /// A binary writer to help write into <see cref="_packetStream"/>
-        /// </summary>
-        private BinaryWriter _binaryWriter;
-
 #endregion
 
 #region INodeEndpoint Events
@@ -198,9 +188,6 @@ namespace Microsoft.Build.BackEnd
             _status = LinkStatus.Inactive;
             _asyncDataMonitor = new object();
             _sharedReadBuffer = InterningBinaryReader.CreateSharedBuffer();
-
-            _packetStream = new MemoryStream();
-            _binaryWriter = new BinaryWriter(_packetStream);
 
 #if FEATURE_PIPE_SECURITY && FEATURE_NAMED_PIPE_SECURITY_CONSTRUCTOR
             if (!NativeMethodsShared.IsMono)
@@ -603,26 +590,22 @@ namespace Microsoft.Build.BackEnd
                             INodePacket packet;
                             while (localPacketQueue.TryDequeue(out packet))
                             {
-                                var packetStream = _packetStream;
-                                packetStream.SetLength(0);
-
+                                MemoryStream packetStream = new MemoryStream();
                                 ITranslator writeTranslator = BinaryTranslator.GetWriteTranslator(packetStream);
 
                                 packetStream.WriteByte((byte)packet.Type);
 
                                 // Pad for packet length
-                                _binaryWriter.Write(0);
+                                packetStream.Write(BitConverter.GetBytes((int)0), 0, 4);
 
                                 // Reset the position in the write buffer.
                                 packet.Translate(writeTranslator);
 
-                                int packetStreamLength = (int)packetStream.Position;
-
                                 // Now write in the actual packet length
                                 packetStream.Position = 1;
-                                _binaryWriter.Write(packetStreamLength - 5);
+                                packetStream.Write(BitConverter.GetBytes((int)packetStream.Length - 5), 0, 4);
 
-                                localWritePipe.Write(packetStream.GetBuffer(), 0, packetStreamLength);
+                                localWritePipe.Write(packetStream.GetBuffer(), 0, (int)packetStream.Length);
                             }
                         }
                         catch (Exception e)
