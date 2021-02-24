@@ -11,9 +11,9 @@ trigger:
 #   SkipApplyOptimizationData: false
 
 variables:
-  - ${ {if eq($[variables.OptProfDropName], '') }}:
+  - ${{ if eq($[variables.OptProfDropName], '') }}:
     - name: SourceBranch
-    value: OptProfDropIsEmpty
+      value: OptProfDropIsEmpty
   - ${{ if startsWith(variables['Build.SourceBranch'], 'refs/heads/exp/') }}:
     - name: SourceBranch
       value: master
