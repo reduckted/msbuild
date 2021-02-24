@@ -11,13 +11,13 @@ trigger:
 #   SkipApplyOptimizationData: false
 
 variables:
-  - ${{ if eq($[variables.OptProfDropName], '') }}:
+  - ${{ if eq(variables.OptProfDropName, '') }}:
     - name: SourceBranch
       value: OptProfDropIsEmpty
   - ${{ if startsWith(variables['Build.SourceBranch'], 'refs/heads/exp/') }}:
     - name: SourceBranch
       value: master
-  - ${{ if ne(variables['Build.OptProfDropName'], '') }}:
+  - ${{ if ne(variables.OptProfDropName, '') }}:
     - name: SourceBranch
       value: OptProfDropNotEmpty
   - name: _DotNetArtifactsCategory
