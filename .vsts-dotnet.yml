@@ -13,9 +13,12 @@ trigger:
 variables:
   - name: SourceBranch
     value: $(IbcSourceBranchName)
-  - ${{ if and(startsWith(variables['Build.SourceBranch'], 'refs/heads/exp/'), eq(variables.OptProfDropName, '')) }}:
+  - ${{ if startsWith(variables['Build.SourceBranch'], 'refs/heads/exp/') }}:
     - name: SourceBranch
       value: master
+  - ${{ if ne(variables.OptProfDropName, '') }}:
+    - name: SourceBranch
+      value: 
   - name: _DotNetArtifactsCategory
     value: .NETCore
   - name: _DotNetValidationArtifactsCategory
