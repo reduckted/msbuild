@@ -14,7 +14,7 @@ variables:
   - ${{ if eq(variables['OptProfDropName'], '') }}:
     - name: SourceBranch
       value: OptProfDropIsEmpty
-  - ${{ if startsWith(variables['Build.SourceBranch'], 'refs/heads/exp/') }}:
+  - ${{ if startsWith(variables['Build.SourceBranch'], 'refs/heads/exps/') }}:
     - name: SourceBranch
       value: master
   - ${{ if ne(variables['OptProfDropName'], '') }}:
